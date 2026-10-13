@@ -1,0 +1,1369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="color-scheme" content="light dark" />
+<title>Shri Sai Hospital Ambala — Staff Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://unpkg.com/html-docx-js@0.3.1/dist/html-docx.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root {
+--primary: #4CAF50; --primary-dark: #2E7D32; --primary-deep: #1B5E20; --primary-light: #E8F5E9;
+--accent: #F58220; --accent-dark: #D9660F; --accent-light: #FFF3E0;
+--bg: #F7FAF7; --white: #ffffff; --muted: #6b7a6b;
+--red: #dc2626; --ok: #16a34a; --warn: #d97706; --info: #2563eb;
+--border: #e2efe2; --shadow: 0 8px 24px rgba(27, 94, 32, 0.10);
+}
+body.dark { --bg: #0c1f16; --white: #123024; --muted: #9cb8a3; --border: #1f4433; --primary-light: #173d2b; --accent-light: #3a2a12; --shadow: 0 8px 24px rgba(0,0,0,.45); color: #e8f5e9; }
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; }
+body { background: var(--bg); color: #14301c; }
+body.dark { color: #e8f5e9; }
+button { font-family: inherit; }
+body.dark select, body.dark input, body.dark textarea { background: #0f2b1e; color: #e8f5e9; border-color: #2a5b40; }
+.splash { position: fixed; inset: 0; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; background: linear-gradient(180deg,#ffffff,var(--primary-light)); transition: opacity .6s; padding: 20px; text-align: center; }
+.splash.hide { opacity: 0; pointer-events: none; }
+.splash img.banner { width: min(92vw,720px); border-radius: 16px; box-shadow: var(--shadow); }
+.splash .name { font-size: 26px; font-weight: 900; color: #14301c; }
+.splash .name .g { color: var(--primary); }
+.splash .group { color: var(--accent); font-weight: 700; font-size: 12px; letter-spacing: 1px; }
+.splash .tag-hi { color: var(--primary-dark); font-weight: 700; font-size: 17px; }
+.splash .tag-en { color: var(--accent); font-style: italic; font-size: 14px; }
+.spinner { width: 34px; height: 34px; border: 4px solid var(--primary-light); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-top: 8px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.login-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg,#2E7D32,#4CAF50 55%,#F58220); padding: 20px; }
+.login-card { width: 100%; max-width: 470px; background: #fff; color: #14301c; border-radius: 20px; box-shadow: var(--shadow); padding: 28px; }
+.login-banner { width: 100%; border-radius: 12px; margin-bottom: 12px; }
+.login-head img.logo { width: 104px; display: block; margin: 0 auto 8px; }
+.login-head .name { text-align: center; font-size: 22px; font-weight: 900; }
+.login-head .name .g { color: var(--primary); }
+.login-head .group { text-align: center; color: var(--accent); font-weight: 700; font-size: 11px; letter-spacing: 1px; margin: 4px 0 8px; }
+.login-head .tag-hi { text-align: center; color: var(--primary-dark); font-weight: 700; }
+.login-head .tag-en { text-align: center; color: var(--accent); font-style: italic; font-size: 13px; margin-bottom: 16px; }
+.logo-fallback { width: 122px; height: 122px; display: none; align-items: center; justify-content: center; margin: 0 auto 8px; }
+.logo-fallback svg { width: 100%; height: 100%; display: block; }
+.login-card label { display: block; font-weight: 700; margin: 14px 0 6px; color: var(--primary-deep); }
+.login-card select, .login-card input { width: 100%; padding: 12px 14px; border: 1px solid #bcd8bc; border-radius: 12px; outline: none; background: #fff; color: #14301c; }
+.login-card button { width: 100%; margin-top: 20px; padding: 13px 16px; background: var(--primary); color: #fff; border: none; border-radius: 12px; font-size: 16px; font-weight: 800; cursor: pointer; }
+.login-card button:hover { background: var(--primary-dark); }
+.helpline { display: flex; justify-content: center; margin-top: 16px; }
+.helpline .pill { background: var(--accent); color: #fff; padding: 9px 16px; border-radius: 999px; font-weight: 700; font-size: 13px; }
+.sec-note { margin-top: 12px; text-align: center; font-size: 11px; color: #6b7a6b; }
+.app-screen { display: none; min-height: 100vh; grid-template-columns: 280px 1fr; }
+.sidebar { background: linear-gradient(180deg,var(--primary-dark),var(--primary-deep)); color: #fff; padding: 22px 16px; }
+.side-logo { width: 58px; background: #fff; border-radius: 12px; padding: 4px; margin-bottom: 10px; }
+.brand { font-size: 21px; font-weight: 900; }
+.brand-sub { color: #FFE0B2; font-size: 12px; margin-bottom: 22px; font-weight: 700; }
+.menu-btn { width: 100%; text-align: left; background: transparent; color: var(--primary-light); border: none; padding: 12px 14px; border-radius: 12px; margin-bottom: 8px; cursor: pointer; font-size: 15px; }
+.menu-btn:hover, .menu-btn.active { background: rgba(255,255,255,.16); color: #fff; }
+.helpline-side { margin: 14px 4px 8px; padding: 10px 12px; border-radius: 12px; background: rgba(245,132,32,.22); color: #FFE0B2; font-size: 12px; font-weight: 700; }
+.logout-btn { background: rgba(245,132,32,.25); color: #FFD8B0; }
+.main { padding: 22px; }
+.topbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; background: var(--white); border-radius: 18px; box-shadow: var(--shadow); padding: 16px 20px; margin-bottom: 18px; border-top: 4px solid var(--primary); }
+.topbar h2 { font-size: 22px; color: var(--primary-dark); margin-bottom: 4px; }
+body.dark .topbar h2 { color: #9fd6a5; }
+.top-logo { width: 42px; height: 42px; object-fit: contain; background: #fff; border-radius: 10px; padding: 3px; }
+.muted { color: var(--muted); font-size: 13px; }
+.right { text-align: right; }
+.theme-btn { background: var(--primary-light); border: none; border-radius: 10px; padding: 8px 11px; cursor: pointer; font-size: 16px; margin-bottom: 6px; }
+.news-ticker { display: flex; align-items: center; background: linear-gradient(90deg,var(--primary-deep),var(--primary-dark)); color: #fff; border-radius: 14px; padding: 9px 0; margin-bottom: 18px; box-shadow: var(--shadow); overflow: hidden; }
+.ticker-label { flex: 0 0 auto; background: var(--accent); color: #fff; font-weight: 800; font-size: 12px; padding: 6px 14px; border-radius: 8px; margin: 0 12px; white-space: nowrap; letter-spacing: .5px; }
+.ticker-viewport { flex: 1; overflow: hidden; }
+.ticker-track { display: inline-flex; align-items: center; white-space: nowrap; animation: tickerMove 45s linear infinite; will-change: transform; }
+.ticker-track:hover { animation-play-state: paused; }
+.ticker-item { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; margin-right: 52px; }
+.ticker-img { height: 26px; width: auto; border-radius: 6px; border: 1px solid rgba(255,255,255,.45); }
+@keyframes tickerMove { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.cards { display: grid; grid-template-columns: repeat(auto-fit,minmax(190px,1fr)); gap: 16px; margin-bottom: 22px; }
+.card { background: var(--white); border-radius: 18px; box-shadow: var(--shadow); padding: 18px; border-left: 5px solid var(--primary); }
+.card .label { color: var(--muted); font-size: 13px; font-weight: 700; margin-bottom: 8px; }
+.card .num { font-size: 30px; font-weight: 900; }
+.panel { background: var(--white); border-radius: 18px; box-shadow: var(--shadow); padding: 18px; margin-bottom: 22px; }
+.panel-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+.panel h3 { font-size: 18px; color: var(--primary-deep); }
+body.dark .panel h3 { color: #a5d6a7; }
+.filter-bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+.chip { padding: 7px 12px; border-radius: 999px; border: 1px solid var(--border); background: var(--white); color: inherit; cursor: pointer; font-weight: 700; font-size: 12px; }
+.chip.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.filter-bar input[type="date"], .filter-bar input[type="month"], .panel input[type="month"] { padding: 7px 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--white); color: inherit; }
+.date-head { margin: 18px 0 8px; color: var(--primary-dark); font-weight: 800; font-size: 15px; }
+body.dark .date-head { color: #a5d6a7; }
+.table-wrap { overflow: auto; }
+table { width: 100%; border-collapse: collapse; min-width: 900px; }
+th, td { text-align: left; padding: 12px 10px; border-bottom: 1px solid var(--border); vertical-align: top; font-size: 14px; }
+th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .4px; }
+.badge { display: inline-block; padding: 6px 10px; border-radius: 999px; font-size: 12px; font-weight: 800; white-space: nowrap; }
+.badge.red { background: #fee2e2; color: #b91c1c; }
+.badge.green { background: #dcfce7; color: #15803d; }
+.badge.yellow { background: #fef3c7; color: #b45309; }
+.badge.blue { background: #dbeafe; color: #1d4ed8; }
+.badge.orange { background: var(--accent-light); color: var(--accent-dark); }
+.badge.grey { background: #e5e7eb; color: #374151; }
+.btn { border: none; border-radius: 10px; padding: 9px 12px; font-weight: 800; cursor: pointer; font-size: 13px; }
+.btn.primary { background: var(--primary); color: #fff; }
+.btn.success { background: #dcfce7; color: #15803d; }
+.btn.danger { background: #fee2e2; color: #b91c1c; }
+.btn.warning { background: #fef3c7; color: #b45309; }
+.btn.grey { background: var(--border); color: inherit; }
+.btn.accent { background: var(--accent); color: #fff; }
+.activity { display: flex; flex-direction: column; gap: 10px; }
+.activity-item { background: var(--primary-light); border-left: 4px solid var(--primary); border-radius: 10px; padding: 12px; }
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: flex; align-items: center; justify-content: center; z-index: 1200; padding: 20px; }
+.modal { background: var(--white); color: inherit; border-radius: 18px; max-width: 600px; width: 100%; padding: 22px; max-height: 86vh; overflow: auto; box-shadow: var(--shadow); }
+.modal h3 { color: var(--primary-dark); margin-bottom: 12px; }
+body.dark .modal h3 { color: #a5d6a7; }
+.modal .row { margin-bottom: 10px; font-size: 14px; }
+.modal textarea, .modal input, .modal select { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); color: inherit; margin-top: 6px; }
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; flex-wrap: wrap; }
+.e2e-note { display: inline-flex; align-items: center; gap: 6px; background: var(--primary-light); color: var(--primary-deep); border: 1px solid var(--primary); padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+body.dark .e2e-note { color: #a5d6a7; }
+.approval-trail { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
+.approval-step { border: 1px solid var(--border); border-radius: 12px; padding: 8px 12px; font-size: 12px; min-width: 150px; }
+.approval-step.done { background: #dcfce7; border-color: #16a34a; }
+.approval-step.current { background: var(--accent-light); border-color: var(--accent); }
+.approval-step.rejected { background: #fee2e2; border-color: #dc2626; }
+.dept-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(240px,1fr)); gap: 14px; }
+.dept-card { background: var(--white); border-radius: 16px; box-shadow: var(--shadow); border-top: 4px solid var(--primary); overflow: hidden; }
+.dept-head { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; cursor: pointer; gap: 8px; }
+.dept-head b { color: var(--primary-deep); }
+body.dark .dept-head b { color: #a5d6a7; }
+.dept-body { padding: 0 14px 14px; display: none; }
+.dept-card.open .dept-body { display: block; }
+.rights-table td, .rights-table th { text-align: center; }
+.watermark { position: fixed; left: 14px; bottom: 8px; font-size: 10px; color: #9bb09b; opacity: .8; pointer-events: none; z-index: 5; }
+.toast { position: fixed; right: 22px; bottom: 22px; z-index: 1500; background: var(--primary-deep); color: #fff; padding: 14px 18px; border-radius: 14px; box-shadow: var(--shadow); opacity: 0; transform: translateY(10px); transition: .25s ease; pointer-events: none; max-width: 360px; }
+.toast.show { opacity: 1; transform: translateY(0); }
+.empty { padding: 18px; color: var(--muted); }
+@media (max-width: 900px) { .app-screen { grid-template-columns: 1fr; } .topbar { flex-direction: column; align-items: flex-start; } .right { text-align: left; } }
+</style>
+</head>
+<body>
+<div class="splash" id="splash">
+<img class="banner" data-role="banner" style="display:none" onerror="this.style.display='none'" />
+<img data-role="logo" width="110" onerror="this.style.display='none'" />
+<div class="name"><span class="g">SHRI SAI</span> HOSPITAL, AMBALA</div>
+<div class="group">A UNIT OF SHRI SAI GROUP OF HOSPITALS</div>
+<div class="tag-hi">मनुष्य सेवा • सर्वोच्च सेवा</div>
+<div class="tag-en">Manushya Seva • Sarvoch Seva</div>
+<div class="spinner"></div>
+</div>
+<div class="login-screen" id="loginScreen" style="display:none;">
+<div class="login-card">
+<div class="login-head">
+<img class="login-banner" data-role="banner" style="display:none" onerror="this.style.display='none'" />
+<img class="logo" data-role="logo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+<div class="logo-fallback" data-logo-fallback></div>
+<div class="name"><span class="g">SHRI SAI</span> HOSPITAL, AMBALA</div>
+<div class="group">A UNIT OF SHRI SAI GROUP OF HOSPITALS</div>
+<div class="tag-hi">मनुष्य सेवा • सर्वोच्च सेवा</div>
+<div class="tag-en">Manushya Seva • Sarvoch Seva</div>
+</div>
+<label for="loginUserId">Unique ID</label>
+<select id="loginUserId"></select>
+<label for="password">Password</label>
+<input type="password" id="password" placeholder="Enter your password" />
+<button onclick="doLogin()">Login to Dashboard</button>
+<div class="helpline"><span class="pill">📞 Helpline No.: 7082015405</span></div>
+<div class="sec-note">🔐 Protected login • 5 wrong attempts = 5 min lock • Forgot password? Contact Admin (Bhavya Prabhakar)</div>
+</div>
+</div>
+<div class="app-screen" id="appScreen">
+<aside class="sidebar" id="sidebar"></aside>
+<main class="main">
+<div class="topbar" id="topbar"></div>
+<div class="news-ticker" id="newsTicker" style="display:none;"></div>
+<section id="content"></section>
+</main>
+</div>
+<div id="modalRoot"></div>
+<div class="watermark" id="watermark"></div>
+<div class="toast" id="toast"></div>
+<script>
+const TODAY_STR = "2026-10-12";
+const TODAY = new Date(TODAY_STR + "T00:00:00");
+const HELPLINE = "7082015405";
+const DEFAULT_PASS = "ShriSai@123";
+const INACTIVITY_MIN = 15;
+const LOGO_FILE = "logo.png";
+const BANNER_FILE = "banner.png";
+const LOGO_CANDIDATES = ["logo.png", "Logo Hospital.png", "logo.jpg", "logo.jpeg", "images/logo.png", "images/Logo Hospital.png"];
+const BANNER_CANDIDATES = ["banner.png", "banner.jpg", "banner.jpeg", "images/banner.png", "images/banner.jpg"];
+const DEPARTMENTS = ["Admin","Ayushman","Accounts","BME","Branding","Cathlab","Dialysis","Dietetics","Facility","HR","Housekeeping","IT","Kitchen","Laundry","Marketing","Maintenance","Nursing-WING-1","Nursing-WING-2","OT","OPD","Pharmacy","Reception","Ophthalmology","Dental","Radiology","Emergency","ICU","Transport","Security","ECHS"];
+const RIGHTS = [{key:"assign",label:"Assign Tasks"},{key:"deleteTask",label:"Delete Tasks"},{key:"addEmp",label:"Add Employee"},{key:"editEmp",label:"Edit Employee"},{key:"suspend",label:"Suspend / Delete Staff"},{key:"ops",label:"View Operations"},{key:"reports",label:"Download Reports"},{key:"notice",label:"Post Notices"},{key:"roster",label:"Manage Roster"},{key:"rights",label:"Manage Rights"},{key:"manpower",label:"View Manpower"}];
+const SALARY_BY_ROLE = { Director: 150000, Admin: 65000, "HR Manager": 55000, Incharge: 42000, Supervisor: 32000, Staff: 24000 };
+const SHRI_SAI_LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><circle cx="256" cy="256" r="234" fill="none" stroke="#4CAF50" stroke-width="16" stroke-linecap="round" stroke-dasharray="1130 340" transform="rotate(120 256 256)"/><rect x="198" y="86" width="116" height="330" rx="18" fill="#4CAF50"/><rect x="94" y="204" width="326" height="100" rx="18" fill="#F58220"/><circle cx="262" cy="146" r="34" fill="#F58220"/><path d="M236 176 C 204 214 204 252 236 292 C 262 324 254 366 222 402 L 268 402 C 300 362 306 318 276 280 C 252 250 262 212 288 186 Z" fill="#F58220"/><text x="256" y="270" font-family="Arial" font-size="50" font-weight="900" fill="#fff" text-anchor="middle">SHRI SAI</text><text x="256" y="330" font-family="Arial" font-size="24" fill="#2E7D32" text-anchor="middle">Group of Hospitals</text><text x="256" y="408" font-family="Arial" font-size="24" font-weight="bold" fill="#fff" text-anchor="middle">AMBALA</text></svg>`;
+let currentUser = null, currentView = "dashboard", taskChip = "all", taskDate = "", tasksVisible = true;
+let pendingAttachment = { name: "", data: "" }, dayMandatory = false, modalClosable = true, assignPresetId = null, exportCtx = null, lastActive = Date.now(), activeChat = null, noticeImage = { name: "", data: "" };
+let openDepts = {}, showDeptTasks = {};
+let rosterDep = "Pharmacy", rosterMonth = "2026-10", salaryMonth = "2026-10";
+let users = [
+{ uniqueId: "SSH001", name: "Dr. Dinesh Bedi", role: "Director", department: "Admin", active: true, salary: 150000 },
+{ uniqueId: "SSH002", name: "Dr. Shraddha Bedi", role: "Director", department: "Admin", active: true, salary: 150000 },
+{ uniqueId: "SSH003", name: "Bhavya Prabhakar", role: "Admin", department: "Admin", active: true, salary: 65000 },
+{ uniqueId: "SSH004", name: "Rahul Verma", role: "HR Manager", department: "HR", active: true, salary: 55000 },
+{ uniqueId: "SSH005", name: "Veena", role: "Incharge", department: "Pharmacy", active: true, salary: 42000 },
+{ uniqueId: "SSH006", name: "Mr. Managat Sharma", role: "Incharge", department: "Reception", active: true, salary: 42000 },
+{ uniqueId: "SSH007", name: "Jyoti", role: "Incharge", department: "Nursing-WING-2", active: true, salary: 42000 },
+{ uniqueId: "SSH008", name: "Kamlesh", role: "Incharge", department: "Nursing-WING-1", active: true, salary: 42000 },
+{ uniqueId: "SSH009", name: "Pushpa", role: "Supervisor", department: "Housekeeping", active: true, salary: 32000 },
+{ uniqueId: "SSH010", name: "Rahul", role: "Supervisor", department: "Transport", active: true, salary: 32000 },
+{ uniqueId: "SSH011", name: "Shri Ram", role: "Supervisor", department: "Facility", active: true, salary: 32000 },
+{ uniqueId: "SSH012", name: "Mr. Arun Parkash", role: "Incharge", department: "Maintenance", active: true, salary: 42000 },
+{ uniqueId: "SSH013", name: "Anil Kumar", role: "Staff", department: "Nursing-WING-1", active: true, salary: 24000 }
+];
+let tasks = [
+{ id: 1, title: "Generator maintenance check", assigneeId: "SSH012", assignerId: "SSH001", department: "Maintenance", due: "2026-10-10", status: "Pending", attachment: "", attachmentData: "", comment: "" },
+{ id: 2, title: "Pharmacy stock audit", assigneeId: "SSH005", assignerId: "SSH003", department: "Pharmacy", due: "2026-10-12", status: "Pending", attachment: "", attachmentData: "", comment: "" },
+{ id: 3, title: "Wing-2 corridor sanitization", assigneeId: "SSH007", assignerId: "SSH001", department: "Nursing-WING-2", due: "2026-10-11", status: "Submitted", attachment: "sanitization-proof.jpg", attachmentData: "", comment: "Completed at 10:30 AM" },
+{ id: 4, title: "Reception duty roster update", assigneeId: "SSH006", assignerId: "SSH004", department: "Reception", due: "2026-10-13", status: "Pending", attachment: "", attachmentData: "", comment: "" },
+{ id: 5, title: "Wing-1 patient feedback file", assigneeId: "SSH008", assignerId: "SSH001", department: "Nursing-WING-1", due: "2026-10-09", status: "In Progress", attachment: "", attachmentData: "", comment: "" },
+{ id: 6, title: "Floor inspection report", assigneeId: "SSH009", assignerId: "SSH003", department: "Housekeeping", due: "2026-10-12", status: "Pending", attachment: "", attachmentData: "", comment: "" },
+{ id: 7, title: "Submit nursing duty chart", assigneeId: "SSH013", assignerId: "SSH008", department: "Nursing-WING-1", due: "2026-10-11", status: "Pending", attachment: "", attachmentData: "", comment: "" }
+];
+let requests = [
+{ id: 1, requesterId: "SSH007", proposedName: "Nurse Priya", proposedRole: "Staff", proposedDepartment: "Nursing-WING-2", status: "Pending" },
+{ id: 2, requesterId: "SSH005", proposedName: "Rohan Kumar", proposedRole: "Staff", proposedDepartment: "Pharmacy", status: "Pending" }
+];
+let attendance = [
+{ uniqueId: "SSH005", date: TODAY_STR, checkIn: "09:02 AM", checkOut: "", report: "" },
+{ uniqueId: "SSH006", date: TODAY_STR, checkIn: "08:55 AM", checkOut: "", report: "" },
+{ uniqueId: "SSH007", date: TODAY_STR, checkIn: "09:10 AM", checkOut: "", report: "" },
+{ uniqueId: "SSH012", date: TODAY_STR, checkIn: "08:40 AM", checkOut: "", report: "" },
+{ uniqueId: "SSH013", date: TODAY_STR, checkIn: "09:00 AM", checkOut: "", report: "" }
+];
+let activity = [
+{ time: "09:20 AM", stamp: "12 Oct 2026, 09:20 am", text: "Dr. Dinesh Bedi assigned Generator maintenance check to Mr. Arun Parkash." },
+{ time: "09:15 AM", stamp: "12 Oct 2026, 09:15 am", text: "Bhavya Prabhakar assigned Pharmacy stock audit to Veena." },
+{ time: "09:10 AM", stamp: "12 Oct 2026, 09:10 am", text: "Jyoti submitted Nursing-WING-2 corridor sanitization task." },
+{ time: "09:02 AM", stamp: "12 Oct 2026, 09:02 am", text: "Veena checked in to Pharmacy duty." }
+];
+let messages = [
+{ id: 1, fromId: "SSH003", toId: "SSH005", text: "Welcome to the staff portal, Veena!", time: "12 Oct 2026, 09:05 am", readBy: ["SSH005"] },
+{ id: 2, fromId: "SSH001", toId: "GROUP_Admin", text: "Team, please review today's admissions by 5 PM.", time: "12 Oct 2026, 09:20 am", readBy: [] }
+];
+let notices = [
+{ id: 1, type: "update", text: "Monthly hygiene audit scheduled for Friday 10 AM.", image: "", byId: "SSH001", byName: "Dr. Dinesh Bedi", time: "12 Oct 2026, 08:30 am", pinned: true },
+{ id: 2, type: "birthday", text: "🎂 Happy Birthday Jyoti! Best wishes from Shri Sai family.", image: "", byId: "SSH002", byName: "Dr. Shraddha Bedi", time: "12 Oct 2026, 08:45 am", pinned: false }
+];
+let rosters = [
+{ id: 1, department: "Pharmacy", month: "2026-10", status: "pending_hr", history: [{ by: "Veena", role: "Incharge", action: "Submitted for HR approval", time: "10 Oct 2026, 04:30 pm" }], rows: [
+{ name: "Veena", desig: "Incharge", shift: "Morning", date: "2026-10-01" },
+{ name: "Veena", desig: "Incharge", shift: "Morning", date: "2026-10-02" },
+{ name: "Veena", desig: "Incharge", shift: "Morning", date: "2026-10-03" },
+{ name: "Rohan Kumar", desig: "Staff", shift: "Evening", date: "2026-10-01" },
+{ name: "Rohan Kumar", desig: "Staff", shift: "Evening", date: "2026-10-02" } ] }
+];
+let userRights = {};
+/* ---------- SECURITY ---------- */
+async function hashPass(pw, salt) {
+if (window.crypto && crypto.subtle) {
+const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(salt + pw));
+return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+let h = 5381; const s = salt + pw;
+for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
+return "fb" + Math.abs(h).toString(16);
+}
+/* ---------- RIGHTS ---------- */
+function defaultRights(role) {
+const none = Object.fromEntries(RIGHTS.map(r => [r.key, false]));
+if (role === "Director" || role === "Admin") return Object.fromEntries(RIGHTS.map(r => [r.key, true]));
+if (role === "HR Manager") return { ...none, assign: true, ops: true, reports: true, notice: true, roster: true, rights: true, manpower: true };
+if (role === "Incharge") return { ...none, assign: true, roster: true };
+if (role === "Supervisor") return { ...none, assign: true };
+return none;
+}
+function hasRight(key) { return !!(currentUser && userRights[currentUser.uniqueId] && userRights[currentUser.uniqueId][key]); }
+function rightLabel(k) { const r = RIGHTS.find(x => x.key === k); return r ? r.label : k; }
+function canModifyRightsOf(target) {
+if (!hasRight("rights")) return false;
+if (target.uniqueId === currentUser.uniqueId) return false;
+if (currentUser.role === "Director") return true;
+if (currentUser.role === "Admin") return target.role !== "Director";
+if (currentUser.role === "HR Manager") return !["Director", "Admin"].includes(target.role);
+return false;
+}
+function toggleRight(uid, key, chk) {
+const target = users.find(u => u.uniqueId === uid); if (!target) return;
+if (!canModifyRightsOf(target)) { chk.checked = !chk.checked; showToast("You cannot change " + target.role + " rights."); return; }
+if (!userRights[uid]) userRights[uid] = defaultRights(target.role);
+userRights[uid][key] = chk.checked;
+addActivity(`${currentUser.name} ${chk.checked ? "granted" : "revoked"} "${rightLabel(key)}" ${chk.checked ? "to" : "from"} ${target.name}.`);
+renderApp(); showToast(`Rights updated for ${target.name}.`);
+}
+function resetRights(uid) {
+const target = users.find(u => u.uniqueId === uid); if (!target) return;
+if (!canModifyRightsOf(target)) { showToast("Not allowed."); return; }
+userRights[uid] = defaultRights(target.role);
+addActivity(`${currentUser.name} reset rights of ${target.name} to role defaults.`);
+renderApp(); showToast(`Rights reset for ${target.name}.`);
+}
+/* ---------- E2E MESSAGE ENCRYPTION ---------- */
+const hasSubtle = !!(window.crypto && crypto.subtle);
+const convKeyCache = {};
+function bufToB64(buf) { const b = new Uint8Array(buf); let s = ""; for (let i = 0; i < b.length; i++) s += String.fromCharCode(b[i]); return btoa(s); }
+function b64ToBuf(b64) { const bin = atob(b64); const a = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); return a.buffer; }
+function convIdOf(m) { return m.toId.startsWith("GROUP_") ? m.toId : [m.fromId, m.toId].sort().join("::"); }
+async function getConvKey(convId) {
+if (convKeyCache[convId]) return convKeyCache[convId];
+const secret = "SSH-AMBALA-E2E::" + convId;
+if (hasSubtle) {
+const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(secret));
+const key = await crypto.subtle.importKey("raw", buf, "AES-GCM", false, ["encrypt", "decrypt"]);
+convKeyCache[convId] = key; return key;
+}
+convKeyCache[convId] = secret; return secret;
+}
+function xorStr(str, key) { let out = ""; for (let i = 0; i < str.length; i++) out += String.fromCharCode(str.charCodeAt(i) ^ key.charCodeAt(i % key.length)); return out; }
+async function encryptMsg(text, convId) {
+const key = await getConvKey(convId);
+if (hasSubtle) {
+const iv = crypto.getRandomValues(new Uint8Array(12));
+const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, new TextEncoder().encode(text));
+return { enc: bufToB64(ct), iv: bufToB64(iv.buffer) };
+}
+return { enc: btoa(xorStr(unescape(encodeURIComponent(text)), key)), iv: "x" };
+}
+async function decryptMsg(m) {
+if (m.plain) return m.plain;
+const key = await getConvKey(convIdOf(m)); let text;
+if (hasSubtle) {
+const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: new Uint8Array(b64ToBuf(m.iv)) }, key, b64ToBuf(m.enc));
+text = new TextDecoder().decode(pt);
+} else { text = decodeURIComponent(escape(xorStr(atob(m.enc), key))); }
+m.plain = text; return text;
+}
+/* ---------- BRANDING ---------- */
+function brandLogoSrc() { return localStorage.getItem("ssh_logo") || LOGO_FILE; }
+function brandBannerSrc() { return localStorage.getItem("ssh_banner") || BANNER_FILE; }
+function fillLogoFallbacks() { document.querySelectorAll("[data-logo-fallback]").forEach(el => { if (!el.dataset.done) { el.dataset.done = "1"; el.innerHTML = SHRI_SAI_LOGO_SVG; } }); }
+function applyLogo(src) { document.querySelectorAll("img[data-role='logo']").forEach(i => { i.src = src; i.style.display = ""; }); document.querySelectorAll(".logo-fallback").forEach(f => f.style.display = "none"); }
+function applyBanner(src) { document.querySelectorAll("img[data-role='banner']").forEach(i => { i.src = src; i.style.display = ""; }); }
+function tryCandidates(list, done) { let i = 0; (function next() { if (i >= list.length) return done(null); const img = new Image(); img.onload = () => done(list[i]); img.onerror = () => { i++; next(); }; img.src = list[i]; })(); }
+function loadBranding() {
+const sl = localStorage.getItem("ssh_logo"), sb = localStorage.getItem("ssh_banner");
+if (sl) applyLogo(sl); else tryCandidates(LOGO_CANDIDATES, src => { if (src) applyLogo(src); else { fillLogoFallbacks(); const fb = document.querySelector(".logo-fallback"); if (fb) fb.style.display = "flex"; } });
+if (sb) applyBanner(sb); else tryCandidates(BANNER_CANDIDATES, src => { if (src) applyBanner(src); });
+}
+/* ---------- BOOT ---------- */
+(async function boot() {
+if (localStorage.getItem("ssh_theme") === "dark") document.body.classList.add("dark");
+loadBranding(); fillLogoFallbacks();
+users.forEach(u => { userRights[u.uniqueId] = defaultRights(u.role); });
+for (const u of users) { u.passHash = await hashPass(DEFAULT_PASS, u.uniqueId); u.mustChange = true; u.fails = 0; u.lockUntil = 0; }
+for (const m of messages) { if (m.text && !m.enc) { const r = await encryptMsg(m.text, convIdOf(m)); m.enc = r.enc; m.iv = r.iv; delete m.text; } }
+initLoginOptions();
+const urlId = (new URLSearchParams(window.location.search).get("id") || "").toUpperCase();
+if (urlId) { const sel = document.getElementById("loginUserId"); for (const opt of sel.options) { if (opt.value === urlId) { sel.value = urlId; break; } } }
+setTimeout(() => { const s = document.getElementById("splash"); s.classList.add("hide"); setTimeout(() => { s.style.display = "none"; document.getElementById("loginScreen").style.display = "flex"; }, 600); }, 2200);
+})();
+["click", "keydown", "touchstart"].forEach(ev => window.addEventListener(ev, () => { lastActive = Date.now(); }, { passive: true }));
+setInterval(() => { if (currentUser && Date.now() - lastActive > INACTIVITY_MIN * 60000) { showToast("🔒 Session locked due to inactivity."); attemptLogout(); } }, 30000);
+function initLoginOptions() { document.getElementById("loginUserId").innerHTML = users.map(u => `<option value="${u.uniqueId}">${u.uniqueId} - ${u.name} (${u.role})</option>`).join(""); }
+/* ---------- LOGIN / LOGOUT ---------- */
+async function doLogin() {
+const id = document.getElementById("loginUserId").value;
+const pw = document.getElementById("password").value;
+const user = users.find(u => u.uniqueId === id);
+if (!user) { alert("Invalid unique ID."); return; }
+if (!user.active) { alert("This employee ID has been suspended. Contact Admin."); return; }
+if (user.lockUntil && Date.now() < user.lockUntil) { alert(`🔒 Account temporarily locked. Try again in ${Math.ceil((user.lockUntil - Date.now()) / 60000)} minute(s).`); return; }
+const hash = await hashPass(pw, user.uniqueId);
+if (hash !== user.passHash) {
+user.fails = (user.fails || 0) + 1;
+addActivity(`⚠️ Failed login attempt for ${user.uniqueId} (${user.fails}/5).`);
+if (user.fails >= 5) { user.lockUntil = Date.now() + 5 * 60000; user.fails = 0; alert("🔒 Too many failed attempts. Account locked for 5 minutes."); }
+else alert(`Incorrect password. ${5 - user.fails} attempt(s) left.`);
+return;
+}
+user.fails = 0;
+currentUser = user; currentView = "dashboard"; lastActive = Date.now();
+document.getElementById("loginScreen").style.display = "none";
+document.getElementById("appScreen").style.display = "grid";
+document.getElementById("watermark").textContent = `Confidential • ${user.name} (${user.uniqueId}) • ${formatDate(TODAY_STR)} • Shri Sai Hospital Ambala`;
+addActivity(`${user.name} logged in.`);
+renderApp();
+showToast(`Welcome ${user.name}. Logged in as ${user.role}.`);
+if (user.mustChange) openChangePassModal(true);
+}
+function attemptLogout() {
+const att = getMyAttendance();
+if (!isDirector() && currentUser && att && att.checkIn && !att.checkOut) { showToast("⚠️ Please submit your day report before logging off."); openDayModal(true); return; }
+doLogout(isDirector() ? "Logged off. (Directors are exempt from day report.)" : undefined);
+}
+function doLogout(msg) {
+if (currentUser) addActivity(`${currentUser.name} logged off.`);
+currentUser = null; currentView = "dashboard"; activeChat = null;
+document.getElementById("appScreen").style.display = "none";
+document.getElementById("loginScreen").style.display = "flex";
+document.getElementById("password").value = "";
+document.getElementById("watermark").textContent = "";
+initLoginOptions();
+if (msg) showToast(msg);
+}
+/* ---------- PERMISSIONS ---------- */
+function canSeeOperations() { return hasRight("ops"); }
+function canManageStaff() { return hasRight("suspend"); }
+function canAssign() { return hasRight("assign"); }
+function canDeleteTask() { return hasRight("deleteTask"); }
+function canAddEmployee() { return hasRight("addEmp"); }
+function canPostNotice() { return hasRight("notice"); }
+function canDownloadDaily() { return hasRight("reports"); }
+function canManageRights() { return hasRight("rights"); }
+function canSeeManpower() { return hasRight("manpower"); }
+function isDirector() { return currentUser && currentUser.role === "Director"; }
+function canDownloadTask(t) { return canSeeOperations() || (t.assigneeId === currentUser.uniqueId && t.status === "Submitted"); }
+function canEditUser(u) {
+if (!currentUser || !hasRight("editEmp")) return false;
+if (u.uniqueId === currentUser.uniqueId) return false;
+if (currentUser.role === "Director") return true;
+if (currentUser.role === "Admin") return u.role !== "Director";
+if (currentUser.role === "HR Manager") return !["Director", "Admin"].includes(u.role);
+return false;
+}
+function getUser(id) { return users.find(u => u.uniqueId === id) || { name: "Unknown", department: "Unknown", uniqueId: id, role: "Unknown" }; }
+function myGroups() { const g = ["GROUP_" + currentUser.department]; if (canSeeOperations()) g.push("GROUP_Management"); return [...new Set(g)]; }
+function canSeeChat(withId) { if (withId.startsWith("GROUP_")) return myGroups().includes(withId); return true; }
+function getVisibleTasks() {
+if (!currentUser) return [];
+if (canSeeOperations()) return tasks;
+if (["Incharge", "Supervisor"].includes(currentUser.role)) {
+return tasks.filter(t => { const a = getUser(t.assigneeId); return t.assigneeId === currentUser.uniqueId || t.department === currentUser.department || a.department === currentUser.department; });
+}
+return tasks.filter(t => t.assigneeId === currentUser.uniqueId);
+}
+function getTargetUsers() {
+if (!currentUser) return [];
+if (currentUser.role === "Director") return users.filter(u => u.active);
+if (["Admin", "HR Manager"].includes(currentUser.role)) return users.filter(u => u.active && u.role !== "Director");
+if (["Incharge", "Supervisor"].includes(currentUser.role)) return users.filter(u => u.active && u.role !== "Director" && (u.department === currentUser.department || u.role === "Staff"));
+return [];
+}
+/* ---------- ROSTER PERMISSIONS & WORKFLOW ---------- */
+function rosterAccessible() { return hasRight("roster"); }
+function allowedRosterDeps() { return canSeeOperations() ? DEPARTMENTS : [currentUser.department]; }
+function canEditRosterDep(dep) { return canSeeOperations() || (currentUser.role === "Incharge" && currentUser.department === dep); }
+function getRoster(dep, month) { return rosters.find(r => r.department === dep && r.month === month); }
+function rosterEditable(r) { return !r || ["draft", "rejected"].includes(r.status); }
+function currentApproverRole(status) { return status === "pending_hr" ? "HR Manager" : status === "pending_admin" ? "Admin" : status === "pending_director" ? "Director" : null; }
+function canApproveRoster(r) { return r && currentApproverRole(r.status) === currentUser.role; }
+function rosterStatusBadge(s) {
+if (s === "draft") return '<span class="badge grey">Draft</span>';
+if (s === "pending_hr") return '<span class="badge yellow">⏳ Awaiting HR Approval</span>';
+if (s === "pending_admin") return '<span class="badge yellow">⏳ HR ✔ — Awaiting Admin</span>';
+if (s === "pending_director") return '<span class="badge orange">⏳ HR ✔ Admin ✔ — Awaiting Director</span>';
+if (s === "approved") return '<span class="badge green">✅ Fully Approved</span>';
+if (s === "rejected") return '<span class="badge red">❌ Rejected</span>';
+return `<span class="badge blue">${s}</span>`;
+}
+function ensureRoster() {
+let r = getRoster(rosterDep, rosterMonth);
+if (!r) { r = { id: Date.now(), department: rosterDep, month: rosterMonth, rows: [], status: "draft", history: [] }; rosters.unshift(r); }
+return r;
+}
+function rosterStamp() { return new Date().toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }); }
+function uploadRoster(inp) {
+const r = getRoster(rosterDep, rosterMonth);
+if (r && !rosterEditable(r)) { alert("This roster is locked (" + r.status + "). Reopen it to edit."); inp.value = ""; return; }
+const f = inp.files[0]; if (!f) return;
+const rd = new FileReader();
+rd.onload = e => {
+const rr = ensureRoster();
+if (!rosterEditable(rr)) return;
+const lines = e.target.result.split(/\r?\n/).filter(l => l.trim());
+let added = 0;
+lines.forEach(l => {
+const p = l.split(",").map(x => x.trim());
+if (p.length >= 1 && p[0]) { rr.rows.push({ name: p[0], desig: p[1] || "", shift: p[2] || "", date: p[3] || "" }); added++; }
+});
+addActivity(`${currentUser.name} uploaded ${added} roster row(s) for ${rosterDep} (${rosterMonth}).`);
+renderApp(); showToast(`${added} roster row(s) added to ${rosterDep}.`);
+};
+rd.readAsText(f);
+}
+function addRosterRow() {
+const r = getRoster(rosterDep, rosterMonth);
+if (r && !rosterEditable(r)) { alert("This roster is locked. Reopen it to edit."); return; }
+const name = document.getElementById("roName").value.trim();
+const desig = document.getElementById("roDesig").value.trim();
+const shift = document.getElementById("roShift").value.trim();
+const date = document.getElementById("roDate").value;
+if (!name) { alert("Enter employee name."); return; }
+if (!date) { alert("Pick the duty date."); return; }
+const rr = ensureRoster();
+rr.rows.push({ name, desig, shift, date });
+addActivity(`${currentUser.name} added roster entry ${name} to ${rosterDep}.`);
+renderApp(); showToast("Roster row added.");
+}
+function delRosterRow(i) {
+const r = getRoster(rosterDep, rosterMonth);
+if (!r || !rosterEditable(r)) return;
+r.rows.splice(i, 1); renderApp(); showToast("Roster row deleted.");
+}
+function submitRosterForApproval() {
+const r = getRoster(rosterDep, rosterMonth);
+if (!r || !r.rows.length) { alert("Add roster rows first."); return; }
+if (!rosterEditable(r)) return;
+r.status = "pending_hr";
+r.history.push({ by: currentUser.name, role: currentUser.role, action: "Submitted for HR approval", time: rosterStamp() });
+addActivity(`🗓 ${currentUser.name} submitted ${rosterDep} roster (${rosterMonth}) for approval.`);
+renderApp(); showToast("Roster submitted → now awaiting HR approval.");
+}
+function approveRosterStage() {
+const r = getRoster(rosterDep, rosterMonth);
+if (!canApproveRoster(r)) return;
+const stage = r.status;
+r.history.push({ by: currentUser.name, role: currentUser.role, action: `Approved (${stage === "pending_hr" ? "HR" : stage === "pending_admin" ? "Admin" : "Director"} stage)`, time: rosterStamp() });
+r.status = stage === "pending_hr" ? "pending_admin" : stage === "pending_admin" ? "pending_director" : "approved";
+addActivity(`✅ ${currentUser.name} (${currentUser.role}) approved ${r.department} roster ${r.month}.`);
+renderApp();
+showToast(r.status === "approved" ? "🎉 Roster fully approved — salary will use it." : "Approved → forwarded to " + currentApproverRole(r.status) + ".");
+}
+function rejectRosterStage() {
+const r = getRoster(rosterDep, rosterMonth);
+if (!canApproveRoster(r)) return;
+const note = prompt("Reason for rejection (shown to the Incharge):");
+if (note === null) return;
+r.status = "rejected"; r.rejectNote = note || "No reason given";
+r.history.push({ by: currentUser.name, role: currentUser.role, action: "Rejected: " + r.rejectNote, time: rosterStamp() });
+addActivity(`❌ ${currentUser.name} (${currentUser.role}) rejected ${r.department} roster ${r.month}.`);
+renderApp(); showToast("Roster rejected — Incharge can fix and resubmit.");
+}
+function reopenRoster() {
+const r = getRoster(rosterDep, rosterMonth);
+if (!r || !canEditRosterDep(rosterDep)) return;
+if (!confirm("Reopen this roster for editing? All approvals will reset.")) return;
+r.status = "draft"; r.rejectNote = "";
+r.history.push({ by: currentUser.name, role: currentUser.role, action: "Reopened for editing (approvals reset)", time: rosterStamp() });
+addActivity(`🔁 ${currentUser.name} reopened ${r.department} roster ${r.month}.`);
+renderApp(); showToast("Roster reopened — approvals reset.");
+}
+function approvalTrailHTML(r) {
+if (!r) return "";
+const steps = [["pending_hr", "1️⃣ HR"], ["pending_admin", "2️⃣ Admin"], ["pending_director", "3️⃣ Director"]];
+const order = { draft: 0, rejected: 0, pending_hr: 1, pending_admin: 2, pending_director: 3, approved: 4 };
+const idx = order[r.status] || 0;
+return `<div class="approval-trail">` + steps.map(([st, label], i) => {
+let cls = "";
+if (r.status === "rejected") cls = "rejected";
+else if (idx > i + 1 || r.status === "approved") cls = "done";
+else if (idx === i + 1) cls = "current";
+return `<div class="approval-step ${cls}"><b>${label}</b><div class="muted">${cls === "done" || r.status === "approved" ? "Approved" : cls === "current" ? "Waiting…" : cls === "rejected" ? "Rejected" : "—"}</div></div>`;
+}).join("") + `</div>`;
+}
+/* ---------- SALARY ---------- */
+function salaryMonthDays(month) { const [y, m] = month.split("-").map(Number); return new Date(y, m, 0).getDate(); }
+function dutyDaysFor(u, month) {
+const r = rosters.find(x => x.department === u.department && x.month === month && x.status === "approved");
+if (!r) return 0;
+return r.rows.filter(row => row.name.trim().toLowerCase() === u.name.trim().toLowerCase()).length;
+}
+/* ---------- DATE FILTERS ---------- */
+function setTaskChip(c) { taskChip = c; taskDate = ""; renderApp(); }
+function setTaskDate(v) { taskDate = v; if (v) taskChip = "date"; renderApp(); }
+function getFilteredTasks(list) {
+let out = [...list];
+if (taskDate) out = out.filter(t => t.due === taskDate);
+else if (taskChip === "today") out = out.filter(t => t.due === TODAY_STR);
+else if (taskChip === "overdue") out = out.filter(t => overdueDays(t) > 0);
+else if (taskChip === "week") { const end = new Date(TODAY); end.setDate(end.getDate() + 6); out = out.filter(t => { const d = new Date(t.due + "T00:00:00"); return d >= TODAY && d <= end; }); }
+out.sort((a, b) => a.due.localeCompare(b.due) || a.id - b.id);
+return out;
+}
+function groupByDue(list) { const map = {}; list.forEach(t => { (map[t.due] = map[t.due] || []).push(t); }); return Object.keys(map).sort().map(k => [k, map[k]]); }
+/* ---------- RENDER ---------- */
+function renderApp() { renderSidebar(); renderTopbar(); renderTicker(); renderContent(); }
+function renderSidebar() {
+const items = [["dashboard", "🏠 Dashboard"], ["tasks", "📋 My Tasks"], ["dailywork", "🗓️ Daily Work"]];
+if (canAssign()) items.push(["directory", "👤 Staff Directory"]);
+if (canSeeOperations()) items.push(["operations", "🏥 Hospital Operations"], ["audit", "🧾 Audit Log"]);
+if (canSeeManpower() || ["Incharge", "Supervisor"].includes(currentUser.role)) items.push(["departments", "🏢 Departments"]);
+if (rosterAccessible()) items.push(["roster", "🗓 Roster"]);
+if (canSeeOperations()) items.push(["salary", "💰 Salary"]);
+if (canManageRights()) items.push(["rights", "🔐 Rights"]);
+items.push(["attendance", "⏱ Attendance"], ["messages", "💬 Messages"], ["notices", "📢 Notice Board"], ["requests", "👥 Employee Requests"], ["profile", "🧍 My Profile"]);
+if (canManageStaff()) items.push(["staff", "🛡 Staff Management"]);
+document.getElementById("sidebar").innerHTML = `
+<img class="side-logo" src="${brandLogoSrc()}" onerror="this.style.display='none'">
+<div class="brand">Shri Sai Hospital</div>
+<div class="brand-sub">Ambala • Staff Dashboard</div>
+${items.map(i => `<button class="menu-btn ${currentView === i[0] ? "active" : ""}" onclick="setView('${i[0]}')">${i[1]}</button>`).join("")}
+<button class="menu-btn" onclick="openChangePassModal(false)">🔑 Change Password</button>
+<div class="helpline-side">📞 Helpline: ${HELPLINE}</div>
+<button class="menu-btn logout-btn" onclick="attemptLogout()">⏻ Log Off${isDirector() ? "" : " (submit day first)"}</button>`;
+}
+function renderTopbar() {
+document.getElementById("topbar").innerHTML = `
+<div style="display:flex;align-items:center;gap:12px;">
+<img class="top-logo" src="${brandLogoSrc()}" onerror="this.style.display='none'">
+<div><h2>${currentUser.name}</h2><div class="muted">${currentUser.uniqueId} • ${currentUser.role} • ${currentUser.department}</div></div>
+</div>
+<div class="right">
+<button class="theme-btn" onclick="toggleTheme()" title="Toggle day / night theme">${document.body.classList.contains("dark") ? "☀️ Day" : "🌙 Night"}</button>
+<div><strong>${formatFullDate(TODAY)}</strong></div>
+<div class="muted">📞 Helpline: ${HELPLINE}</div>
+</div>`;
+}
+function renderTicker() {
+const el = document.getElementById("newsTicker"); if (!el) return;
+const items = [...notices].sort((a, b) => (b.pinned - a.pinned) || b.id - a.id);
+if (!items.length) { el.style.display = "none"; return; }
+el.style.display = "flex";
+const bits = items.map(n => {
+const icon = n.type === "birthday" ? "🎂" : n.type === "image" ? "📷" : n.type === "reminder" ? "⏰" : "📢";
+const img = n.image ? `<img class="ticker-img" src="${n.image}" alt=""/>` : "";
+return `<span class="ticker-item">${icon} ${img}<b>${n.byName}:</b> ${escapeHtml(n.text)}</span>`;
+}).join("");
+el.innerHTML = `<span class="ticker-label">📰 NEWS FLASH</span><div class="ticker-viewport"><div class="ticker-track">${bits}${bits}</div></div>`;
+}
+function toggleTheme() { document.body.classList.toggle("dark"); localStorage.setItem("ssh_theme", document.body.classList.contains("dark") ? "dark" : "light"); renderApp(); }
+function setView(v) { currentView = v; renderApp(); }
+function renderContent() {
+const c = document.getElementById("content");
+if (currentView === "dashboard") c.innerHTML = renderDashboard();
+else if (currentView === "tasks") c.innerHTML = renderTasksView(false);
+else if (currentView === "operations") c.innerHTML = renderTasksView(true);
+else if (currentView === "directory") c.innerHTML = renderDirectoryView();
+else if (currentView === "attendance") c.innerHTML = renderAttendanceView();
+else if (currentView === "requests") c.innerHTML = renderRequestsView();
+else if (currentView === "profile") c.innerHTML = renderProfileView();
+else if (currentView === "staff") c.innerHTML = renderStaffView();
+else if (currentView === "audit") c.innerHTML = renderAuditView();
+else if (currentView === "messages") c.innerHTML = renderMessagesView();
+else if (currentView === "notices") c.innerHTML = renderNoticesView();
+else if (currentView === "dailywork") c.innerHTML = renderDailyWorkView();
+else if (currentView === "departments") c.innerHTML = renderDepartmentsView();
+else if (currentView === "rights") c.innerHTML = renderRightsView();
+else if (currentView === "roster") c.innerHTML = renderRosterView();
+else if (currentView === "salary") c.innerHTML = renderSalaryView();
+}
+function dayPendingBanner() {
+const att = getMyAttendance();
+if (att && att.checkIn && !att.checkOut) {
+return `<div class="panel" style="border-left:5px solid var(--warn)"><div class="panel-head"><h3>⚠️ End-of-Day Report Pending</h3><button class="btn warning" onclick="openDayModal(false)">Submit Day Report</button></div><p class="muted">All employees must submit their day report before going off duty. Logout is blocked until submitted.</p></div>`;
+}
+return "";
+}
+function renderDashboard() {
+const visible = getVisibleTasks();
+const overdue = visible.filter(t => overdueDays(t) > 0);
+const submitted = visible.filter(t => t.status === "Submitted").length;
+const pending = visible.filter(t => ["Pending", "In Progress"].includes(t.status)).length;
+const myAtt = getMyAttendance();
+let cards;
+if (canSeeOperations()) {
+const checkedIn = attendance.filter(a => a.date === TODAY_STR && a.checkIn).length;
+const pendReq = requests.filter(r => r.status === "Pending").length;
+cards = `
+<div class="card"><div class="label">Active Staff</div><div class="num">${users.filter(u => u.active).length}</div></div>
+<div class="card"><div class="label">Checked In Today</div><div class="num" style="color:var(--ok)">${checkedIn}</div></div>
+<div class="card"><div class="label">Total Tasks</div><div class="num" style="color:var(--info)">${tasks.length}</div></div>
+<div class="card"><div class="label">Overdue Tasks</div><div class="num" style="color:var(--red)">${overdue.length}</div></div>
+<div class="card"><div class="label">Pending Requests</div><div class="num" style="color:var(--warn)">${pendReq}</div></div>`;
+} else {
+cards = `
+<div class="card"><div class="label">My Tasks</div><div class="num">${visible.length}</div></div>
+<div class="card"><div class="label">Pending</div><div class="num" style="color:var(--warn)">${pending}</div></div>
+<div class="card"><div class="label">Submitted</div><div class="num" style="color:var(--ok)">${submitted}</div></div>
+<div class="card"><div class="label">Overdue</div><div class="num" style="color:var(--red)">${overdue.length}</div></div>
+<div class="card"><div class="label">Attendance</div><div class="num" style="font-size:17px;line-height:1.4;">${myAtt && myAtt.checkIn ? "Checked In" : "Not Checked In"}</div></div>`;
+}
+return dayPendingBanner() + `
+<div class="cards">${cards}</div>
+${canSeeOperations() ? `<div class="panel"><div class="panel-head"><h3>Hospital Operations Feed</h3>
+<div style="display:flex;gap:8px;"><span class="badge blue">Live</span>${canDownloadDaily() ? `<button class="btn success" onclick="openExportModal('daily')">⬇️ Daily Report</button>` : ""}</div></div>
+<div class="activity">${activity.slice(0, 6).map(a => `<div class="activity-item"><strong>${a.time}</strong> — ${a.text}</div>`).join("")}</div></div>` : ""}
+<div class="panel"><div class="panel-head"><h3>${canSeeOperations() ? "Critical Overdue Tasks" : "My Overdue Tasks"}</h3><span class="badge red">${overdue.length} Overdue</span></div>${tasksTable(overdue)}</div>
+<div class="panel"><div class="panel-head"><h3>${canSeeOperations() ? "All Recent Tasks (click a task to open)" : "My Assigned Tasks (click a task to open)"}</h3>${canAssign() ? `<button class="btn primary" onclick="openAssignModal(null)">+ Assign Task</button>` : ""}</div>${tasksTable(getFilteredTasks(visible).slice(0, 10))}</div>`;
+}
+function filterBar() {
+return `<div class="filter-bar">
+<button class="chip ${taskChip === "all" && !taskDate ? "active" : ""}" onclick="setTaskChip('all')">All Dates</button>
+<button class="chip ${taskChip === "today" ? "active" : ""}" onclick="setTaskChip('today')">Today</button>
+<button class="chip ${taskChip === "overdue" ? "active" : ""}" onclick="setTaskChip('overdue')">Overdue</button>
+<button class="chip ${taskChip === "week" ? "active" : ""}" onclick="setTaskChip('week')">This Week</button>
+<input type="date" value="${taskDate}" onchange="setTaskDate(this.value)" title="Filter by exact due date" />
+${taskDate ? `<button class="chip" onclick="setTaskChip('all')">Clear</button>` : ""}
+</div>`;
+}
+function renderTasksView(isOps) {
+const base = isOps ? tasks : getVisibleTasks();
+const filtered = getFilteredTasks(base);
+const groups = groupByDue(filtered);
+return `<div class="panel">
+<div class="panel-head"><h3>${isOps ? "Hospital Operations — Date-wise Tasks" : "My Tasks — Date-wise"}</h3>
+<div style="display:flex;gap:8px;flex-wrap:wrap;">
+<button class="btn grey" onclick="tasksVisible=!tasksVisible;renderApp()">${tasksVisible ? "🙈 Hide Tasks" : "👁 Show Tasks"}</button>
+<button class="btn success" onclick="openExportModal('my')">⬇️ My Reports</button>
+${canAssign() ? `<button class="btn primary" onclick="openAssignModal(null)">+ Assign Task</button>` : ""}
+</div></div>
+${tasksVisible ? filterBar() + (groups.length ? groups.map(([d, ts]) => `<div class="date-head">📅 ${formatDate(d)} ${d < TODAY_STR ? "• past due day" : d === TODAY_STR ? "• today" : ""}</div>${tasksTable(ts)}`).join("") : `<div class="empty">No tasks match this date filter.</div>`) : `<div class="empty">Tasks are hidden. Press "👁 Show Tasks" to reveal.</div>`}
+</div>`;
+}
+function renderDirectoryView() {
+if (!canAssign()) return `<div class="panel"><div class="empty">You do not have permission to assign tasks.</div></div>`;
+const eligible = getTargetUsers();
+const rows = users.map(u => {
+const canTarget = eligible.some(e => e.uniqueId === u.uniqueId);
+const nameCell = canTarget ? `<strong style="cursor:pointer;text-decoration:underline" onclick="openAssignModal('${u.uniqueId}')">${u.name}</strong>` : `<strong>${u.name}</strong>`;
+const act = canTarget ? `<button class="btn primary" onclick="openAssignModal('${u.uniqueId}')">Assign Task</button>` : `<span class="muted">Not assignable by you</span>`;
+return `<tr><td>${nameCell}</td><td>${u.uniqueId}</td><td>${u.role}</td><td>${u.department}</td><td>${u.active ? `<span class="badge green">Active</span>` : `<span class="badge red">Suspended</span>`}</td><td>${act}</td></tr>`;
+}).join("");
+return `<div class="panel"><div class="panel-head"><h3>Staff Directory — click an employee name to assign a task</h3><span class="badge blue">${eligible.length} assignable</span></div>
+<div class="table-wrap"><table><thead><tr><th>Employee</th><th>Unique ID</th><th>Role</th><th>Dept</th><th>Status</th><th>Action</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+}
+function tasksTable(list) {
+if (!list.length) return `<div class="empty">No tasks found.</div>`;
+return `<div class="table-wrap"><table>
+<thead><tr><th>Task</th><th>Assignee</th><th>Assigner</th><th>Dept</th><th>Due</th><th>Overdue</th><th>Status</th><th>Attachment</th><th>Action</th></tr></thead>
+<tbody>${list.map(t => {
+const a = getUser(t.assigneeId), g = getUser(t.assignerId), d = overdueDays(t);
+const od = d > 0 ? `<span class="badge red">${d} days overdue</span>` : `<span class="badge green">On time</span>`;
+const att = t.attachment ? `<span class="badge blue">📎 ${t.attachment}</span>` : `<span class="muted">None</span>`;
+let act = "";
+if (t.assigneeId === currentUser.uniqueId && ["Pending", "In Progress"].includes(t.status)) act += `<button class="btn success" onclick="openSubmitModal(${t.id})">Submit</button> `;
+act += `<button class="btn grey" onclick="openTaskModal(${t.id})">Open</button>`;
+if (canDeleteTask()) act += ` <button class="btn danger" onclick="deleteTask(${t.id})">Delete</button>`;
+return `<tr><td><strong style="cursor:pointer;text-decoration:underline" onclick="openTaskModal(${t.id})">${t.title}</strong></td><td>${a.name}<div class="muted">${a.uniqueId}</div></td><td>${g.name}</td><td>${t.department}</td><td>${formatDate(t.due)}</td><td>${od}</td><td>${statusBadge(t.status)}</td><td>${att}</td><td>${act}</td></tr>`;
+}).join("")}</tbody></table></div>`;
+}
+/* ---------- ROSTER VIEW (approval workflow) ---------- */
+function renderRosterView() {
+if (!rosterAccessible()) return `<div class="panel"><div class="empty">Not permitted.</div></div>`;
+const deps = allowedRosterDeps();
+if (!deps.includes(rosterDep)) rosterDep = deps[0];
+const opts = deps.map(d => `<option ${d === rosterDep ? "selected" : ""}>${d}</option>`).join("");
+const r = getRoster(rosterDep, rosterMonth);
+const editable = canEditRosterDep(rosterDep) && rosterEditable(r);
+const approver = canApproveRoster(r);
+const rows = r ? r.rows.map((x, i) => `<tr><td>${i + 1}</td><td>${x.name}</td><td>${x.desig}</td><td>${x.shift}</td><td>${x.date}</td><td>${editable ? `<button class="btn danger" onclick="delRosterRow(${i})">Delete</button>` : "—"}</td></tr>`).join("") : "";
+const trail = r ? approvalTrailHTML(r) : "";
+const hist = r && r.history.length ? `<div class="activity" style="margin-top:10px;">${r.history.slice().reverse().map(h => `<div class="activity-item"><b>${h.time}</b> — ${h.by} (${h.role}): ${h.action}</div>`).join("")}</div>` : "";
+return `<div class="panel">
+<div class="panel-head"><h3>🗓 Staff Roster — Upload • Approve • Salary</h3>
+<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+<select onchange="rosterDep=this.value;renderApp()">${opts}</select>
+<input type="month" value="${rosterMonth}" onchange="rosterMonth=this.value;renderApp()" />
+</div></div>
+<p class="muted" style="margin-bottom:10px;">Approval order: <b>HR → Admin → Director</b>. Salary is processed only from <b>fully approved</b> rosters. ${canSeeOperations() ? "You can view all departments." : "As Department Incharge you manage <b>only " + currentUser.department + "</b>."}</p>
+${r ? `<div class="row"><strong>Status:</strong> ${rosterStatusBadge(r.status)} ${r.status === "rejected" ? `<span class="muted">— ${r.rejectNote}</span>` : ""}</div>${trail}` : `<div class="empty">No roster yet for ${rosterDep} (${rosterMonth}). ${canEditRosterDep(rosterDep) ? "Upload or add rows below to create it." : ""}</div>`}
+${editable ? `
+<div class="row" style="margin-top:10px;"><input type="file" accept=".csv,.txt" onchange="uploadRoster(this)"/></div>
+<p class="muted">CSV format: Name,Designation,Shift,Date (one duty per line)</p>
+<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-top:8px;">
+<div><label class="muted">Name</label><input id="roName" style="width:150px"/></div>
+<div><label class="muted">Designation</label><input id="roDesig" style="width:130px"/></div>
+<div><label class="muted">Shift</label><input id="roShift" style="width:100px" placeholder="Morning"/></div>
+<div><label class="muted">Duty Date</label><input id="roDate" type="date" style="width:150px"/></div>
+<button class="btn primary" onclick="addRosterRow()">+ Add Row</button>
+</div>` : ""}
+<div class="modal-actions" style="justify-content:flex-start;margin-top:14px;">
+${editable && r && r.rows.length ? `<button class="btn accent" onclick="submitRosterForApproval()">📨 Submit for Approval (→ HR)</button>` : ""}
+${approver ? `<button class="btn success" onclick="approveRosterStage()">✅ Approve (${currentUser.role})</button> <button class="btn danger" onclick="rejectRosterStage()">❌ Reject</button>` : ""}
+${r && r.status === "approved" && canEditRosterDep(rosterDep) ? `<button class="btn warning" onclick="reopenRoster()">🔁 Edit Roster (resets approvals)</button>` : ""}
+${r && canSeeOperations() ? `<button class="btn success" onclick="openExportModal('roster')">⬇️ Download Roster</button>` : ""}
+</div>
+<div class="table-wrap" style="margin-top:14px;"><table><thead><tr><th>#</th><th>Name</th><th>Designation</th><th>Shift</th><th>Duty Date</th><th>Action</th></tr></thead>
+<tbody>${rows || '<tr><td colspan="6">No roster entries.</td></tr>'}</tbody></table></div>
+${hist}
+</div>`;
+}
+/* ---------- SALARY VIEW ---------- */
+function renderSalaryView() {
+if (!canSeeOperations()) return `<div class="panel"><div class="empty">Not permitted.</div></div>`;
+const dim = salaryMonthDays(salaryMonth);
+let total = 0;
+const rows = users.filter(u => u.active).map(u => {
+const dd = Math.min(dutyDaysFor(u, salaryMonth), dim);
+const pay = Math.round(u.salary * dd / dim);
+total += pay;
+const r = rosters.find(x => x.department === u.department && x.month === salaryMonth);
+const rStat = r ? rosterStatusBadge(r.status) : '<span class="badge grey">No roster</span>';
+return `<tr><td><b>${u.name}</b><div class="muted">${u.uniqueId}</div></td><td>${u.department}</td><td>${u.role}</td><td>₹${u.salary.toLocaleString("en-IN")}</td><td>${dd} / ${dim}</td><td>${rStat}</td><td><b>₹${pay.toLocaleString("en-IN")}</b></td></tr>`;
+}).join("");
+return `<div class="panel">
+<div class="panel-head"><h3>💰 Salary Processing — as per approved roster</h3>
+<div style="display:flex;gap:8px;align-items:center;">
+<input type="month" value="${salaryMonth}" onchange="salaryMonth=this.value;renderApp()" />
+<button class="btn success" onclick="openExportModal('salary')">⬇️ Salary Report (PDF/Word/Excel)</button>
+</div></div>
+<p class="muted" style="margin-bottom:12px;">Payable days are counted <b>only from rosters fully approved (HR → Admin → Director)</b> for ${salaryMonth} (${dim} days). Salary = Monthly salary × Duty days ÷ ${dim}.</p>
+<div class="table-wrap"><table><thead><tr><th>Employee</th><th>Dept</th><th>Role</th><th>Monthly Salary</th><th>Duty Days (approved roster)</th><th>Roster Status</th><th>Payable Salary</th></tr></thead>
+<tbody>${rows}<tr><td colspan="6" style="text-align:right;"><b>TOTAL</b></td><td><b>₹${total.toLocaleString("en-IN")}</b></td></tr></tbody></table></div>
+</div>`;
+}
+function buildSalaryReport() {
+if (!canSeeOperations()) return null;
+const dim = salaryMonthDays(salaryMonth);
+let total = 0;
+const rows = users.filter(u => u.active).map(u => {
+const dd = Math.min(dutyDaysFor(u, salaryMonth), dim);
+const pay = Math.round(u.salary * dd / dim); total += pay;
+const r = rosters.find(x => x.department === u.department && x.month === salaryMonth);
+return [u.name, u.uniqueId, u.department, String(u.salary), `${dd} / ${dim}`, r ? r.status : "no roster", String(pay)];
+});
+rows.push(["TOTAL", "", "", "", "", "", String(total)]);
+return {
+filename: `salary-report-${salaryMonth}`,
+title: `Salary Report — ${salaryMonth} (as per approved roster)`,
+meta: [`Generated by: ${currentUser.name} (${currentUser.role})`, `Month days: ${dim}`, `Helpline: ${HELPLINE}`],
+tables: [{ name: "Salary", head: ["Employee", "ID", "Dept", "Monthly", "Duty Days", "Roster Status", "Payable"], rows }],
+notes: ["Payable days counted only from HR→Admin→Director approved rosters.", "Confidential — internal hospital document."]
+};
+}
+function buildRosterReport() {
+const r = getRoster(rosterDep, rosterMonth);
+if (!r) { alert("No roster to download."); return null; }
+return {
+filename: `roster-${rosterDep}-${rosterMonth}`,
+title: `Roster — ${rosterDep} (${rosterMonth}) — Status: ${r.status.toUpperCase()}`,
+meta: [`Generated by: ${currentUser.name} (${currentUser.role})`, `Approval trail: ${r.history.map(h => h.by + " " + h.action).join(" → ") || "—"}`, `Helpline: ${HELPLINE}`],
+tables: [{ name: "Roster", head: ["#", "Name", "Designation", "Shift", "Duty Date"], rows: r.rows.map((x, i) => [String(i + 1), x.name, x.desig, x.shift, x.date]) }],
+notes: ["Confidential — internal hospital document."]
+};
+}
+/* ---------- DEPARTMENTS / MANPOWER ---------- */
+function deptStaff(d) { return users.filter(u => u.department === d); }
+function deptManpower(d) { return attendance.filter(a => a.date === TODAY_STR && a.checkIn && getUser(a.uniqueId).department === d).length; }
+function deptHead(d) { return users.find(u => u.department === d && u.role === "Incharge") || deptStaff(d)[0]; }
+function toggleDept(d) { openDepts[d] = !openDepts[d]; renderApp(); }
+function toggleDeptTasks(d) { showDeptTasks[d] = !showDeptTasks[d]; renderApp(); }
+function renderDepartmentsView() {
+const canAll = canSeeManpower();
+if (!canAll && !["Incharge", "Supervisor"].includes(currentUser.role)) return `<div class="panel"><div class="empty">You do not have permission to view departments.</div></div>`;
+const deps = canAll ? DEPARTMENTS : [currentUser.department];
+const cards = deps.map(d => {
+const staff = deptStaff(d); const head = deptHead(d); const mp = deptManpower(d);
+const dts = tasks.filter(t => t.department === d);
+return `<div class="dept-card ${openDepts[d] ? "open" : ""}">
+<div class="dept-head" onclick="toggleDept('${d}')"><b>${d}</b><span class="muted">${openDepts[d] ? "▲ Close" : "▼ Open"}</span></div>
+<div class="dept-body">
+<div class="row"><strong>Head:</strong> ${head ? head.name + " (" + head.role + ")" : "—"}</div>
+<div class="row"><strong>Total staff:</strong> ${staff.length}</div>
+${canAll ? `<div class="row"><strong>👥 Manpower today:</strong> <span class="badge green">${mp} checked in</span></div>` : ""}
+<div class="row"><strong>Employees:</strong></div>
+${staff.length ? `<div class="table-wrap"><table style="min-width:0"><thead><tr><th>Name</th><th>ID</th><th>Role</th><th>Status</th></tr></thead><tbody>${staff.map(u => `<tr><td>${u.name}</td><td>${u.uniqueId}</td><td>${u.role}</td><td>${u.active ? '<span class="badge green">Active</span>' : '<span class="badge red">Suspended</span>'}</td></tr>`).join("")}</tbody></table></div>` : '<div class="muted">No staff assigned yet.</div>'}
+<div class="row" style="margin-top:10px;"><button class="btn ${showDeptTasks[d] ? "warning" : "primary"}" onclick="toggleDeptTasks('${d}')">${showDeptTasks[d] ? "🙈 Hide Tasks" : "👁 Show Tasks"} (${dts.length})</button></div>
+${showDeptTasks[d] ? `<div class="table-wrap" style="margin-top:8px;"><table style="min-width:0"><thead><tr><th>Task</th><th>Assignee</th><th>Due</th><th>Status</th></tr></thead><tbody>${dts.length ? dts.map(t => `<tr><td>${t.title}</td><td>${getUser(t.assigneeId).name}</td><td>${formatDate(t.due)}</td><td>${statusBadge(t.status)}</td></tr>`).join("") : '<tr><td colspan="4">No tasks.</td></tr>'}</tbody></table></div>` : ""}
+</div></div>`;
+}).join("");
+return `<div class="panel"><div class="panel-head"><h3>🏢 Departments ${canAll ? "— All (Manpower visible)" : "— Your Department"}</h3><span class="badge blue">${deps.length} departments</span></div>
+<p class="muted" style="margin-bottom:12px;">Click a department card to <b>Open/Close</b>. Tasks stay hidden until <b>Show Tasks</b>. ${canAll ? "Manpower = live checked-in count (Director/Admin/HR)." : ""}</p>
+<div class="dept-grid">${cards}</div></div>`;
+}
+/* ---------- RIGHTS VIEW ---------- */
+function renderRightsView() {
+if (!canManageRights()) return `<div class="panel"><div class="empty">Not permitted.</div></div>`;
+const rows = users.map(u => {
+const canMod = canModifyRightsOf(u);
+const cells = RIGHTS.map(r => {
+const on = !!(userRights[u.uniqueId] && userRights[u.uniqueId][r.key]);
+return `<td><input type="checkbox" ${on ? "checked" : ""} ${canMod ? "" : "disabled"} onchange="toggleRight('${u.uniqueId}','${r.key}',this)"/></td>`;
+}).join("");
+return `<tr><td><strong>${u.name}</strong><div class="muted">${u.uniqueId} • ${u.role}</div></td>${cells}<td>${canMod ? `<button class="btn grey" onclick="resetRights('${u.uniqueId}')">Reset</button>` : '<span class="muted">Locked</span>'}</td></tr>`;
+}).join("");
+return `<div class="panel"><div class="panel-head"><h3>🔐 Rights Management</h3>
+<span class="badge ${currentUser.role === "HR Manager" ? "yellow" : "blue"}">${currentUser.role === "HR Manager" ? "HR: cannot modify Director/Admin" : "Full control"}</span></div>
+<p class="muted" style="margin-bottom:12px;">Director, Admin and HR can grant or revoke rights. <b>HR cannot alter Director or Admin rights.</b> Changes apply immediately.</p>
+<div class="table-wrap"><table class="rights-table" style="min-width:1200px;"><thead><tr><th>Employee</th>${RIGHTS.map(r => `<th>${r.label}</th>`).join("")}<th>Action</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+}
+function renderAttendanceView() {
+const my = getMyAttendance();
+let html = `<div class="panel"><div class="panel-head"><h3>My Attendance</h3><span class="badge blue">${formatDate(TODAY_STR)}</span></div>
+<p style="margin-bottom:14px;">${my && my.checkIn ? `Checked in at <strong>${my.checkIn}</strong>.` : "You have not checked in yet."}${my && my.checkOut ? ` Checked out at <strong>${my.checkOut}</strong>.` : ""}</p>
+<div style="display:flex;gap:10px;flex-wrap:wrap;"><button class="btn primary" onclick="checkIn()">Check In</button>
+<button class="btn warning" onclick="openDayModal(false)">Check Out & Submit Day</button></div></div>`;
+if (!canSeeOperations()) return html;
+const rows = users.filter(u => u.active).map(u => {
+const r = attendance.find(a => a.uniqueId === u.uniqueId && a.date === TODAY_STR);
+return `<tr><td><strong>${u.name}</strong><div class="muted">${u.uniqueId}</div></td><td>${u.role}</td><td>${u.department}</td><td>${r && r.checkIn ? `<span class="badge green">${r.checkIn}</span>` : `<span class="badge red">Not Checked In</span>`}</td><td>${r && r.checkOut ? `<span class="badge blue">${r.checkOut}</span>` : `<span class="muted">-</span>`}</td><td>${r && r.report ? r.report : `<span class="muted">Day report pending</span>`}</td></tr>`;
+}).join("");
+return html + `<div class="panel"><div class="panel-head"><h3>Hospital Staff Attendance — Today</h3>
+<div style="display:flex;gap:8px;"><span class="badge blue">Admin / HR View</span>${canDownloadDaily() ? `<button class="btn success" onclick="openExportModal('daily')">⬇️ Daily Report</button>` : ""}</div></div>
+<div class="table-wrap"><table><thead><tr><th>Employee</th><th>Role</th><th>Dept</th><th>Check In</th><th>Check Out</th><th>Day Report</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+}
+function renderRequestsView() {
+const canApprove = currentUser.role === "Admin";
+const rows = requests.map(r => {
+const req = getUser(r.requesterId);
+const act = (r.status === "Pending" && canApprove) ? `<button class="btn success" onclick="approveRequest(${r.id})">Approve</button> <button class="btn danger" onclick="rejectRequest(${r.id})">Reject</button>` : `<span class="muted">Reviewed</span>`;
+return `<tr><td>${req.name}<div class="muted">${r.requesterId}</div></td><td>${r.proposedName}</td><td>${r.proposedRole}</td><td>${r.proposedDepartment}</td><td>${statusBadge(r.status)}</td><td>${act}</td></tr>`;
+}).join("");
+return `<div class="panel"><div class="panel-head"><h3>Employee Add Requests</h3><button class="btn primary" onclick="addRequest()">+ Request Add Employee</button></div>
+<p class="muted" style="margin-bottom:14px;">Any employee can request a new hire. Approval by Admin. Directors/Admin add directly from Staff Management.</p>
+<div class="table-wrap"><table><thead><tr><th>Requested By</th><th>Proposed Employee</th><th>Role</th><th>Dept</th><th>Status</th><th>Action</th></tr></thead><tbody>${rows || `<tr><td colspan="6">No requests found.</td></tr>`}</tbody></table></div></div>`;
+}
+function renderProfileView() {
+const u = currentUser;
+const mine = tasks.filter(t => t.assigneeId === u.uniqueId && t.status === "Submitted");
+const att = getMyAttendance();
+return `<div class="panel">
+<div class="panel-head"><h3>My Profile</h3><span class="badge green">${u.active ? "Active" : "Suspended"}</span></div>
+<div class="row"><strong>Name:</strong> ${u.name}</div>
+<div class="row"><strong>Unique ID:</strong> ${u.uniqueId}</div>
+<div class="row"><strong>Role:</strong> ${u.role}</div>
+<div class="row"><strong>Department:</strong> ${u.department}</div>
+<div class="row"><strong>Today:</strong> ${att && att.checkIn ? `Checked in ${att.checkIn}` : "Not checked in"}${att && att.checkOut ? ` • Checked out ${att.checkOut}` : ""}</div>
+<div class="row"><strong>Submitted tasks:</strong> ${mine.length}</div>
+<div class="modal-actions" style="justify-content:flex-start;">
+<button class="btn primary" onclick="openChangePassModal(false)">🔑 Change Password</button>
+<button class="btn success" onclick="openExportModal('my')">⬇️ My Reports (PDF/Word/Excel)</button>
+</div></div>`;
+}
+function renderStaffView() {
+if (!canManageStaff()) return `<div class="panel"><div class="empty">You do not have permission to view staff management.</div></div>`;
+const rows = users.map(u => {
+const canAct = u.uniqueId !== currentUser.uniqueId && !(currentUser.role === "Admin" && u.role === "Director");
+const canEdit = canEditUser(u);
+let act = `<button class="btn primary" onclick="openEditEmployeeModal('${u.uniqueId}')" ${canEdit ? "" : "disabled style='opacity:.4'"}>✏️ Edit</button> `;
+act += canAct ? `<button class="btn warning" onclick="suspendUser('${u.uniqueId}')">Suspend</button> <button class="btn danger" onclick="deleteUser('${u.uniqueId}')">Delete</button>` : `<span class="muted">-</span>`;
+return `<tr><td><strong>${u.name}</strong></td><td>${u.uniqueId}</td><td>${u.role}</td><td>${u.department}</td><td>₹${(u.salary || 0).toLocaleString("en-IN")}</td><td>${u.active ? `<span class="badge green">Active</span>` : `<span class="badge red">Suspended</span>`}</td><td>${act}</td></tr>`;
+}).join("");
+return `<div class="panel"><div class="panel-head"><h3>Staff Management</h3>
+<div style="display:flex;gap:8px;"><span class="badge blue">Director / Admin Access</span>${canAddEmployee() ? `<button class="btn primary" onclick="openAddEmployeeModal()">+ Add Employee</button>` : ""}</div></div>
+<div class="table-wrap"><table><thead><tr><th>Employee</th><th>Unique ID</th><th>Role</th><th>Dept</th><th>Salary</th><th>Status</th><th>Action</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+}
+function renderAuditView() {
+if (!canSeeOperations()) return `<div class="panel"><div class="empty">Not permitted.</div></div>`;
+return `<div class="panel"><div class="panel-head"><h3>Audit Log — Security & Activity Trail</h3><span class="badge blue">${activity.length} entries</span></div>
+<div class="activity">${activity.map(a => `<div class="activity-item"><strong>${a.stamp || a.time}</strong> — ${a.text}</div>`).join("")}</div></div>`;
+}
+/* ---------- MESSAGING (E2E) ---------- */
+function chatBelongsTo(m, chat) {
+if (chat.startsWith("GROUP_")) return m.toId === chat;
+return (m.fromId === chat && m.toId === currentUser.uniqueId) || (m.fromId === currentUser.uniqueId && m.toId === chat);
+}
+function chatLabel(id) { if (id.startsWith("GROUP_")) return "👥 " + id.replace("GROUP_", "") + " Group"; const u = getUser(id); return u.name + " (" + u.uniqueId + ")"; }
+async function ensureChatDecrypted() {
+if (!activeChat) return; let changed = false;
+for (const m of messages) { if (chatBelongsTo(m, activeChat) && !m.plain) { try { await decryptMsg(m); } catch (e) { m.plain = "(unable to decrypt)"; } changed = true; } }
+if (changed) renderApp();
+}
+function renderMessagesView() {
+const myChats = [];
+myGroups().forEach(g => myChats.push(g));
+users.filter(u => u.active && u.uniqueId !== currentUser.uniqueId).forEach(u => myChats.push(u.uniqueId));
+const list = myChats.map(id => {
+const un = messages.filter(m => chatBelongsTo(m, id) && m.fromId !== currentUser.uniqueId && !m.readBy.includes(currentUser.uniqueId)).length;
+return `<button onclick="openChat('${id}')" style="width:100%;text-align:left;margin-bottom:6px;padding:10px 12px;border-radius:12px;border:1px solid ${activeChat === id ? "var(--primary)" : "var(--border)"};background:${activeChat === id ? "var(--primary-light)" : "var(--white)"};cursor:pointer;font-size:14px;color:inherit;">
+${chatLabel(id)} ${un ? `<span class="badge red" style="float:right">${un} new</span>` : ""}</button>`;
+}).join("");
+let chatHtml = `<div class="empty">Select a conversation. 🔒 End-to-end encrypted — only group members / the two participants can read.</div>`;
+if (activeChat) {
+const msgs = messages.filter(m => chatBelongsTo(m, activeChat)).sort((a, b) => a.id - b.id);
+msgs.forEach(m => { if (!m.readBy.includes(currentUser.uniqueId) && m.fromId !== currentUser.uniqueId) m.readBy.push(currentUser.uniqueId); });
+chatHtml = `<div style="max-height:340px;overflow:auto;padding:6px;">` +
+(msgs.length ? msgs.map(m => `<div style="display:flex;justify-content:${m.fromId === currentUser.uniqueId ? "flex-end" : "flex-start"};margin-bottom:8px;">
+<div style="max-width:72%;background:${m.fromId === currentUser.uniqueId ? "var(--primary)" : "var(--white)"};color:${m.fromId === currentUser.uniqueId ? "#fff" : "inherit"};border:1px solid var(--border);padding:9px 12px;border-radius:14px;">
+<div class="muted" style="font-size:11px;color:${m.fromId === currentUser.uniqueId ? "#e8f5e9" : ""}">${getUser(m.fromId).name} • ${m.time}</div>
+${m.plain ? escapeHtml(m.plain) : `<span style="opacity:.7">🔒 decrypting…</span>`}</div></div>`).join("") : `<div class="empty">No messages yet — say hello!</div>`) + `</div>
+<div style="display:flex;gap:8px;margin-top:10px;">
+<input id="msgInput" placeholder="Type an encrypted message..." style="flex:1;padding:11px;border:1px solid var(--border);border-radius:12px;background:var(--white);color:inherit;" onkeydown="if(event.key==='Enter')sendMessage()"/>
+<button class="btn primary" onclick="sendMessage()">Send ➤</button></div>`;
+}
+return `<div style="display:grid;grid-template-columns:280px 1fr;gap:16px;">
+<div class="panel"><div class="panel-head"><h3>💬 Chats</h3></div>${list}</div>
+<div class="panel"><div class="panel-head"><h3>${activeChat ? chatLabel(activeChat) : "Messages"}</h3>
+<div style="display:flex;gap:8px;align-items:center;"><span class="e2e-note">🔒 End-to-end encrypted</span>
+${activeChat ? `<button class="btn grey" onclick="activeChat=null;renderApp()">← Back</button>` : ""}</div></div>${chatHtml}</div></div>`;
+}
+function openChat(id) { if (!canSeeChat(id)) { alert("Not available."); return; } activeChat = id; renderApp(); setTimeout(ensureChatDecrypted, 60); }
+async function sendMessage() {
+const inp = document.getElementById("msgInput"); const text = inp.value.trim();
+if (!text || !activeChat) return;
+const convId = activeChat.startsWith("GROUP_") ? activeChat : [currentUser.uniqueId, activeChat].sort().join("::");
+const r = await encryptMsg(text, convId);
+messages.push({ id: Date.now(), fromId: currentUser.uniqueId, toId: activeChat, enc: r.enc, iv: r.iv, plain: text, time: new Date().toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }), readBy: [] });
+addActivity(`💬 ${currentUser.name} sent an encrypted message to ${chatLabel(activeChat)}.`);
+renderApp();
+}
+/* ---------- NOTICE BOARD ---------- */
+function renderNoticesView() {
+const canPost = canPostNotice();
+const sorted = [...notices].sort((a, b) => (b.pinned - a.pinned) || b.id - a.id);
+return `<div class="panel"><div class="panel-head"><h3>📢 Notice Board — Updates, Reminders & Wishes</h3>
+${canPost ? `<button class="btn primary" onclick="openNoticeModal()">+ Post Notice</button>` : `<span class="badge blue">Only Director / Admin / HR can post</span>`}</div>
+${sorted.length ? sorted.map(n => `
+<div class="panel" style="margin-bottom:12px;border-left:5px solid ${n.type === "birthday" ? "var(--accent)" : "var(--primary)"};${n.pinned ? "background:var(--accent-light);" : ""}">
+<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+<strong>${n.type === "birthday" ? "🎂 Birthday Wish" : n.type === "image" ? "📷 Photo Update" : n.type === "reminder" ? "⏰ Reminder" : "📌 Update"} ${n.pinned ? "• PINNED" : ""}</strong>
+<span class="muted">${n.time} • ${n.byName} (${getUser(n.byId).role})</span></div>
+<p style="margin:8px 0;">${escapeHtml(n.text)}</p>
+${n.image ? `<img src="${n.image}" style="max-width:320px;border-radius:12px;"/>` : ""}
+${canPost ? `<div style="margin-top:8px;"><button class="btn grey" onclick="togglePinNotice(${n.id})">${n.pinned ? "Unpin" : "📌 Pin"}</button> <button class="btn danger" onclick="deleteNotice(${n.id})">Delete</button></div>` : ""}
+</div>`).join("") : `<div class="empty">No notices yet.</div>`}</div>`;
+}
+function openNoticeModal() {
+if (!canPostNotice()) return; noticeImage = { name: "", data: "" };
+openModal(`<h3>📢 Post a Notice / Reminder / Wish</h3>
+<div class="row"><label>Type</label><select id="ntType"><option value="update">📌 Daily Update</option><option value="reminder">⏰ Reminder</option><option value="birthday">🎂 Birthday Wish</option><option value="image">📷 Photo Update</option></select></div>
+<div class="row"><label>Message</label><textarea id="ntText" rows="3" placeholder="Write the update / reminder / wishes..."></textarea></div>
+<div class="row"><label>Attach photo (optional, max 1.5 MB)</label><input type="file" accept="image/*" onchange="pickNoticeImage(this)"/></div>
+<div class="row muted" id="ntImgName">No photo selected</div>
+<div class="row"><input type="checkbox" id="ntPin" style="width:auto"/> 📌 Pin to top</div>
+<div class="modal-actions"><button class="btn grey" onclick="closeModal()">Cancel</button><button class="btn primary" onclick="postNotice()">Post Notice</button></div>`);
+}
+function pickNoticeImage(inp) {
+const f = inp.files[0]; if (!f) return;
+if (f.size > 1.5 * 1024 * 1024) { alert("Image too large (max 1.5 MB)."); inp.value = ""; return; }
+const r = new FileReader();
+r.onload = e => { noticeImage = { name: f.name, data: e.target.result }; document.getElementById("ntImgName").textContent = "Selected: " + f.name; };
+r.readAsDataURL(f);
+}
+function postNotice() {
+const text = document.getElementById("ntText").value.trim();
+if (!text) { alert("Please write a message."); return; }
+notices.unshift({ id: Date.now(), type: document.getElementById("ntType").value, text, image: noticeImage.data, byId: currentUser.uniqueId, byName: currentUser.name, time: new Date().toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }), pinned: document.getElementById("ntPin").checked });
+addActivity(`📢 ${currentUser.name} posted a notice on the board.`);
+closeModal(); renderApp(); showToast("Notice posted — scrolling in the News Flash ticker for all staff.");
+}
+function togglePinNotice(id) { const n = notices.find(x => x.id === id); if (n && canPostNotice()) { n.pinned = !n.pinned; renderApp(); } }
+function deleteNotice(id) { if (!canPostNotice()) return; if (!confirm("Delete this notice?")) return; notices = notices.filter(x => x.id !== id); renderApp(); showToast("Notice deleted."); }
+function escapeHtml(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+/* ---------- DAILY WORK ---------- */
+function renderDailyWorkView() {
+const manager = canSeeOperations();
+const todayTasks = tasks.filter(t => manager || t.assigneeId === currentUser.uniqueId);
+const rows = todayTasks.map(t => `<tr><td><strong>${t.title}</strong></td><td>${getUser(t.assigneeId).name}</td><td>${formatDate(t.due)}</td><td>${statusBadge(t.status)}</td><td>${overdueDays(t) > 0 ? `<span class="badge red">${overdueDays(t)} days</span>` : `<span class="badge green">On time</span>`}</td></tr>`).join("");
+const feed = activity.slice(0, 25).map(a => `<div class="activity-item"><strong>${a.stamp || a.time}</strong> — ${a.text}</div>`).join("");
+return dayPendingBanner() + `
+<div class="panel"><div class="panel-head"><h3>🗓️ Daily Work — ${formatDate(TODAY_STR)}</h3>
+<div style="display:flex;gap:8px;">${manager ? `<button class="btn success" onclick="openExportModal('daily')">⬇️ Daily Report</button>` : ""}
+<button class="btn primary" onclick="checkIn()">Check In</button>
+${isDirector() ? "" : `<button class="btn warning" onclick="openDayModal(false)">Submit Day</button>`}</div></div>
+<p class="muted">${manager ? "Management view: live activity of the whole hospital today." : "Your personal day: only your tasks and activity are visible here."}</p></div>
+<div class="panel"><div class="panel-head"><h3>Tasks Snapshot</h3></div>
+<div class="table-wrap"><table><thead><tr><th>Task</th><th>Assignee</th><th>Due</th><th>Status</th><th>Overdue</th></tr></thead><tbody>${rows || `<tr><td colspan="5">No tasks.</td></tr>`}</tbody></table></div></div>
+<div class="panel"><div class="panel-head"><h3>Live Activity Feed</h3><span class="badge blue">${manager ? "Hospital-wide" : "Your view"}</span></div>
+<div class="activity">${feed}</div></div>`;
+}
+/* ---------- MODALS ---------- */
+function openModal(html, closable = true) { modalClosable = closable; document.getElementById("modalRoot").innerHTML = `<div class="overlay" onclick="overlayClick(event)"><div class="modal">${html}</div></div>`; }
+function overlayClick(e) { if (modalClosable && e.target === e.currentTarget) closeModal(); }
+function closeModal() { document.getElementById("modalRoot").innerHTML = ""; }
+function openAssignModal(assigneeId) {
+assignPresetId = assigneeId || null;
+const eligible = getTargetUsers();
+if (!assignPresetId && !eligible.length) { alert("No eligible employees found."); return; }
+const tm = new Date(TODAY); tm.setDate(tm.getDate() + 1);
+const targetHtml = assignPresetId ? `<div class="row"><strong>Assign to:</strong> ${getUser(assignPresetId).name} (${assignPresetId}) — ${getUser(assignPresetId).department}</div>`
+: `<div class="row"><select id="asAssignee">${eligible.map(u => `<option value="${u.uniqueId}">${u.uniqueId} - ${u.name} (${u.role})</option>`).join("")}</select></div>`;
+openModal(`<h3>📋 Assign Task</h3>${targetHtml}
+<div class="row"><input id="asTitle" placeholder="Task title"/></div>
+<div class="row"><input id="asDue" value="${formatDateInput(tm)}" placeholder="Due date YYYY-MM-DD"/></div>
+<div class="modal-actions"><button class="btn grey" onclick="closeModal()">Cancel</button><button class="btn primary" onclick="assignTaskTo()">Assign Task</button></div>`);
+}
+function assignTaskTo() {
+const assigneeId = assignPresetId || (document.getElementById("asAssignee") ? document.getElementById("asAssignee").value : null);
+const assignee = users.find(u => u.uniqueId === assigneeId);
+if (!assignee) { alert("Invalid employee."); return; }
+const title = document.getElementById("asTitle").value.trim();
+if (!title) { alert("Please enter a task title."); return; }
+let due = document.getElementById("asDue").value.trim();
+if (!due || !/^\d{4}-\d{2}-\d{2}$/.test(due)) due = TODAY_STR;
+tasks.unshift({ id: Date.now(), title, assigneeId: assignee.uniqueId, assignerId: currentUser.uniqueId, department: assignee.department, due, status: "Pending", attachment: "", attachmentData: "", comment: "" });
+addActivity(`${currentUser.name} assigned "${title}" to ${assignee.name} (due ${formatDate(due)}).`);
+closeModal(); renderApp(); showToast(`Task assigned to ${assignee.name}. Notification sent.`);
+}
+function deleteTask(id) {
+if (!canDeleteTask()) { alert("Only Director or Admin can delete tasks."); return; }
+const t = tasks.find(x => x.id === id); if (!t) return;
+if (!confirm(`Delete task "${t.title}"?`)) return;
+tasks = tasks.filter(x => x.id !== id);
+addActivity(`🗑️ ${currentUser.name} deleted task "${t.title}".`);
+closeModal(); renderApp(); showToast("Task deleted.");
+}
+function openTaskModal(id) {
+const t = tasks.find(x => x.id === id); if (!t) return;
+const a = getUser(t.assigneeId), g = getUser(t.assignerId), d = overdueDays(t);
+const canSubmit = t.assigneeId === currentUser.uniqueId && ["Pending", "In Progress"].includes(t.status);
+const canDl = canDownloadTask(t);
+openModal(`<h3>📋 ${t.title}</h3>
+<div class="row"><strong>Status:</strong> ${statusBadge(t.status)} ${d > 0 ? `<span class="badge red">${d} days overdue</span>` : `<span class="badge green">On time</span>`}</div>
+<div class="row"><strong>Assignee:</strong> ${a.name} (${a.uniqueId}) — ${a.department}</div>
+<div class="row"><strong>Assigned by:</strong> ${g.name} (${g.uniqueId})</div>
+<div class="row"><strong>Due date:</strong> ${formatDate(t.due)}</div>
+<div class="row"><strong>Comment:</strong> ${t.comment || "<span class='muted'>No comment yet</span>"}</div>
+<div class="row"><strong>Attachment:</strong> ${t.attachment ? `📎 ${t.attachment}` : "<span class='muted'>None</span>"}</div>
+<div class="modal-actions">
+${t.attachment && canDl ? `<button class="btn primary" onclick="downloadAttachment(${t.id})">⬇️ Attachment</button>` : ""}
+${canDl ? `<button class="btn success" onclick="openExportModal('task', ${t.id})">⬇️ Report (PDF/Word/Excel)</button>` : `<span class="muted">Reports unlock after submission</span>`}
+${canSubmit ? `<button class="btn warning" onclick="closeModal();openSubmitModal(${t.id})">Submit Task</button>` : ""}
+${canDeleteTask() ? `<button class="btn danger" onclick="deleteTask(${t.id})">Delete Task</button>` : ""}
+<button class="btn grey" onclick="closeModal()">Close</button></div>`);
+}
+/* ---------- REPORT BUILDERS ---------- */
+function buildTaskReport(id) {
+const t = tasks.find(x => x.id === id); if (!t || !canDownloadTask(t)) return null;
+const a = getUser(t.assigneeId), g = getUser(t.assignerId);
+return { filename: `task-${t.id}-report`, title: `Task Report — ${t.title}`,
+meta: [`Generated: ${new Date().toLocaleString("en-IN")}`, `By: ${currentUser.name} (${currentUser.role})`, `Helpline: ${HELPLINE}`],
+tables: [{ name: "Task Details", head: ["Field", "Detail"], rows: [["Task", t.title], ["Status", t.status], ["Overdue days", String(overdueDays(t))], ["Assignee", `${a.name} (${a.uniqueId}) - ${a.department}`], ["Assigned by", `${g.name} (${g.uniqueId})`], ["Due date", formatDate(t.due)], ["Attachment", t.attachment || "None"], ["Comment", t.comment || "-"]] }],
+notes: ["Confidential — internal hospital document."] };
+}
+function buildMyReports() {
+const mine = tasks.filter(t => t.assigneeId === currentUser.uniqueId && t.status === "Submitted");
+if (!mine.length) { alert("You have no submitted tasks yet."); return null; }
+return { filename: `my-submitted-reports-${currentUser.uniqueId}`, title: `My Submitted Task Reports — ${currentUser.name} (${currentUser.uniqueId})`,
+meta: [`Generated: ${new Date().toLocaleString("en-IN")}`, `Helpline: ${HELPLINE}`],
+tables: [{ name: "Submitted Tasks", head: ["#", "Task", "Due", "Dept", "Comment", "Attachment"], rows: mine.map((t, i) => [String(i + 1), t.title, formatDate(t.due), t.department, t.comment || "-", t.attachment || "None"]) }],
+notes: ["Confidential — internal hospital document."] };
+}
+function buildDailyReport() {
+if (!canDownloadDaily()) return null;
+const attRows = users.filter(u => u.active).map(u => { const r = attendance.find(a => a.uniqueId === u.uniqueId && a.date === TODAY_STR); return [u.name, u.uniqueId, u.role, r && r.checkIn ? r.checkIn : "Not checked in", r && r.checkOut ? r.checkOut : "-", r && r.report ? r.report : "Pending"]; });
+const taskRows = tasks.map(t => [t.title, getUser(t.assigneeId).name, t.department, formatDate(t.due), t.status, String(overdueDays(t))]);
+const reqRows = requests.map(r => [getUser(r.requesterId).name, r.proposedName, r.proposedRole, r.status]);
+return { filename: `daily-report-${TODAY_STR}`, title: `Daily Hospital Report — ${formatDate(TODAY_STR)}`,
+meta: [`Generated by: ${currentUser.name} (${currentUser.role})`, `Helpline: ${HELPLINE}`],
+tables: [
+{ name: "Attendance", head: ["Employee", "ID", "Role", "Check In", "Check Out", "Day Report"], rows: attRows },
+{ name: "Tasks", head: ["Task", "Assignee", "Dept", "Due", "Status", "Overdue Days"], rows: taskRows },
+{ name: "Employee Requests", head: ["Requested By", "Proposed", "Role", "Status"], rows: reqRows }],
+notes: ["Confidential — internal hospital document."] };
+}
+/* ---------- EXPORT ENGINE ---------- */
+function openExportModal(kind, id) {
+exportCtx = { kind, id: id || null };
+openModal(`<h3>⬇️ Download Report</h3><p class="muted">Choose the file format you need:</p>
+<div class="modal-actions" style="justify-content:flex-start;">
+<button class="btn danger" onclick="runExport('pdf')">📕 PDF</button>
+<button class="btn primary" onclick="runExport('docx')">📘 Word (DOCX)</button>
+<button class="btn success" onclick="runExport('xlsx')">📗 Excel (XLSX)</button>
+<button class="btn grey" onclick="runExport('txt')">📄 Text (TXT)</button></div>
+<div class="modal-actions"><button class="btn grey" onclick="closeModal()">Cancel</button></div>`);
+}
+function runExport(fmt) {
+if (!exportCtx) return; let rep = null;
+if (exportCtx.kind === "task") rep = buildTaskReport(exportCtx.id);
+else if (exportCtx.kind === "my") rep = buildMyReports();
+else if (exportCtx.kind === "salary") rep = buildSalaryReport();
+else if (exportCtx.kind === "roster") rep = buildRosterReport();
+else rep = buildDailyReport();
+if (!rep) return;
+if (fmt === "pdf") exportPDF(rep); else if (fmt === "docx") exportDOCX(rep); else if (fmt === "xlsx") exportXLSX(rep); else exportTXT(rep);
+addActivity(`${currentUser.name} downloaded ${fmt.toUpperCase()} — ${rep.title}`);
+closeModal(); showToast(`${rep.title} → ${fmt.toUpperCase()} downloaded.`);
+}
+function saveBlob(blob, name) { const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1500); }
+function exportTXT(rep) {
+let txt = "SHRI SAI HOSPITAL, AMBALA\n" + rep.title + "\n" + "=".repeat(50) + "\n";
+rep.meta.forEach(m => txt += m + "\n");
+rep.tables.forEach(t => { txt += "\n" + t.name.toUpperCase() + "\n" + t.head.join(" | ") + "\n"; t.rows.forEach(r => txt += r.join(" | ") + "\n"); });
+rep.notes.forEach(n => txt += "\n" + n);
+saveBlob(new Blob([txt], { type: "text/plain" }), rep.filename + ".txt");
+}
+function exportPDF(rep) {
+if (!window.jspdf || !window.jspdf.jsPDF) { alert("PDF library not loaded. Check internet connection and refresh."); return; }
+const doc = new window.jspdf.jsPDF(); let y = 16;
+doc.setFontSize(15); doc.setTextColor(46, 125, 50); doc.text("SHRI SAI HOSPITAL, AMBALA", 14, y); y += 7;
+doc.setFontSize(11); doc.setTextColor(245, 132, 32); doc.text(doc.splitTextToSize(rep.title, 180), 14, y); y += 9;
+doc.setFontSize(9); doc.setTextColor(100, 100, 100);
+rep.meta.forEach(m => { doc.text(m, 14, y); y += 5; }); y += 2;
+rep.tables.forEach(t => {
+doc.autoTable({ head: [t.head], body: t.rows, startY: y, styles: { fontSize: 8, cellPadding: 2 }, headStyles: { fillColor: [46, 125, 50], textColor: 255 }, margin: { left: 14, right: 14 } });
+y = doc.lastAutoTable.finalY + 8;
+});
+doc.setFontSize(8); doc.setTextColor(120, 120, 120);
+rep.notes.forEach(n => { if (y > 285) { doc.addPage(); y = 15; } doc.text(n, 14, y); y += 5; });
+doc.save(rep.filename + ".pdf");
+}
+function exportDOCX(rep) {
+let html = `<html><head><meta charset="utf-8"><title>${rep.title}</title></head><body><h1 style="color:#2E7D32;font-family:Arial;">SHRI SAI HOSPITAL, AMBALA</h1><h2 style="color:#F58220;font-family:Arial;">${rep.title}</h2>`;
+rep.meta.forEach(m => html += `<p style="font-family:Arial;font-size:11px;color:#555;">${m}</p>`);
+rep.tables.forEach(t => {
+html += `<h3 style="font-family:Arial;">${t.name}</h3><table border="1" cellspacing="0" cellpadding="5" style="border-collapse:collapse;font-family:Arial;font-size:11px;"><tr>${t.head.map(h => `<th style="background:#E8F5E9;">${h}</th>`).join("")}</tr>`;
+t.rows.forEach(r => html += `<tr>${r.map(c => `<td>${c}</td>`).join("")}</tr>`);
+html += `</table><br/>`;
+});
+rep.notes.forEach(n => html += `<p style="font-family:Arial;font-size:10px;color:#777;"><i>${n}</i></p>`);
+html += `</body></html>`;
+const blob = window.htmlDocx ? htmlDocx.asBlob(html) : new Blob([html], { type: "application/msword" });
+saveBlob(blob, rep.filename + ".docx");
+}
+function exportXLSX(rep) {
+if (!window.XLSX) {
+let csv = rep.tables.map(t => [t.head.join(","), ...t.rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(","))].join("\n")).join("\n\n");
+saveBlob(new Blob([csv], { type: "text/csv" }), rep.filename + ".csv");
+alert("Excel library not loaded — downloaded CSV instead (opens in Excel)."); return;
+}
+const wb = XLSX.utils.book_new();
+XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["SHRI SAI HOSPITAL, AMBALA"], [rep.title], ...rep.meta.map(m => [m])]), "Info");
+rep.tables.forEach((t, i) => XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([t.head, ...t.rows]), (t.name || "Table" + (i + 1)).slice(0, 31)));
+XLSX.writeFile(wb, rep.filename + ".xlsx");
+}
+function triggerDownload(href, name) { const a = document.createElement("a"); a.href = href; a.download = name; document.body.appendChild(a); a.click(); a.remove(); }
+function downloadAttachment(id) {
+const t = tasks.find(x => x.id === id); if (!t || !t.attachment || !canDownloadTask(t)) return;
+if (t.attachmentData) triggerDownload(t.attachmentData, t.attachment);
+else saveBlob(new Blob([`SHRI SAI HOSPITAL AMBALA\nDemo attachment placeholder\nTask: ${t.title}\nFile: ${t.attachment}\nComment: ${t.comment || "-"}`], { type: "text/plain" }), t.attachment.replace(/\.[a-z]+$/i, "") + "-demo.txt");
+addActivity(`${currentUser.name} downloaded attachment of task "${t.title}".`);
+showToast("Attachment downloaded.");
+}
+/* ---------- SUBMIT / DAY / EMPLOYEE / PASSWORD ---------- */
+function openSubmitModal(id) {
+pendingAttachment = { name: "", data: "" };
+openModal(`<h3>✅ Submit Task</h3><p class="muted">Attach proof (photo/file, max 2 MB) and add a comment, then submit.</p>
+<div class="row"><input type="file" onchange="onFilePick(this)"/></div>
+<div class="row muted" id="fileName">No file selected</div>
+<div class="row"><textarea id="subComment" rows="3" placeholder="Submission comment / work done..."></textarea></div>
+<div class="modal-actions"><button class="btn grey" onclick="closeModal()">Cancel</button><button class="btn success" onclick="submitTaskModal(${id})">Submit Task</button></div>`);
+}
+function onFilePick(inp) {
+const f = inp.files[0]; if (!f) return;
+if (f.size > 2 * 1024 * 1024) { alert("File too large (max 2 MB in prototype)."); inp.value = ""; return; }
+const reader = new FileReader();
+reader.onload = e => { pendingAttachment = { name: f.name, data: e.target.result }; document.getElementById("fileName").textContent = "Selected: " + f.name; };
+reader.readAsDataURL(f);
+}
+function submitTaskModal(id) {
+const t = tasks.find(x => x.id === id); if (!t) return;
+const comment = document.getElementById("subComment").value.trim();
+if (!comment) { alert("Please add a submission comment."); return; }
+if (!pendingAttachment.name) { alert("Please attach a file/photo as proof of work."); return; }
+t.status = "Submitted"; t.comment = comment; t.attachment = pendingAttachment.name; t.attachmentData = pendingAttachment.data;
+addActivity(`${currentUser.name} submitted task "${t.title}" with attachment ${t.attachment}.`);
+closeModal(); renderApp(); showToast("Task submitted successfully.");
+}
+function openDayModal(mandatory) {
+dayMandatory = mandatory;
+openModal(`<h3>🌇 End-of-Day Report ${mandatory ? "(mandatory before log off)" : ""}</h3>
+<p class="muted">Every employee must submit the day report during off duty.</p>
+<div class="row"><textarea id="dayReport" rows="4" placeholder="Summarize today's work, pending items, handover notes..."></textarea></div>
+<div class="modal-actions">${mandatory ? "" : `<button class="btn grey" onclick="closeModal()">Cancel</button>`}
+<button class="btn warning" onclick="submitDay()">${mandatory ? "Submit Day & Log Off" : "Submit Day Report"}</button></div>`, !mandatory);
+}
+function submitDay() {
+const report = document.getElementById("dayReport").value.trim();
+if (!report) { alert("Please write your day report before submitting."); return; }
+const r = getMyAttendance();
+if (!r || !r.checkIn) { alert("You must check in before submitting a day report."); return; }
+r.checkOut = formatTime(new Date()); r.report = report;
+addActivity(`${currentUser.name} submitted end-of-day report and checked out.`);
+closeModal(); renderApp(); showToast("Day report submitted. Thank you!");
+if (dayMandatory) doLogout("You have logged off after submitting your day.");
+}
+function openAddEmployeeModal() {
+if (!canAddEmployee()) { alert("You don't have the Add Employee right."); return; }
+openModal(`<h3>➕ Add Employee</h3><p class="muted">A new Unique ID (SSH…) and default password are generated automatically.</p>
+<div class="row"><input id="aeName" placeholder="Employee full name"/></div>
+<div class="row"><select id="aeRole"><option>Staff</option><option>Supervisor</option><option>Incharge</option><option>HR Manager</option><option>Admin</option></select></div>
+<div class="row"><select id="aeDept">${DEPARTMENTS.map(d => `<option>${d}</option>`).join("")}</select></div>
+<div class="modal-actions"><button class="btn grey" onclick="closeModal()">Cancel</button><button class="btn primary" onclick="addEmployee()">Add Employee</button></div>`);
+}
+async function addEmployee() {
+const name = document.getElementById("aeName").value.trim();
+const role = document.getElementById("aeRole").value;
+const dept = document.getElementById("aeDept").value;
+if (!name) { alert("Please enter the employee name."); return; }
+const nums = users.map(u => parseInt(u.uniqueId.replace("SSH", ""), 10)).filter(n => !isNaN(n));
+const id = "SSH" + String(Math.max(...nums, 0) + 1).padStart(3, "0");
+const newUser = { uniqueId: id, name, role, department: dept, active: true, mustChange: true, fails: 0, lockUntil: 0, salary: SALARY_BY_ROLE[role] || 24000 };
+newUser.passHash = await hashPass(DEFAULT_PASS, id);
+users.push(newUser); userRights[id] = defaultRights(role);
+addActivity(`➕ ${currentUser.name} added employee ${name} as ${role} (${id}) in ${dept}.`);
+initLoginOptions(); closeModal(); renderApp();
+showToast(`Employee added: ${id} — default password ${DEFAULT_PASS}`);
+}
+function openEditEmployeeModal(id) {
+const u = users.find(x => x.uniqueId === id);
+if (!u || !canEditUser(u)) { alert("You are not allowed to edit this employee."); return; }
+const roles = ["Staff", "Supervisor", "Incharge", "HR Manager", "Admin", "Director"];
+openModal(`<h3>✏️ Edit Employee — ${u.uniqueId}</h3>
+<div class="row"><label>Name</label><input id="eeName" value="${u.name}"/></div>
+<div class="row"><label>Role</label><select id="eeRole">${roles.map(rr => `<option ${rr === u.role ? "selected" : ""}>${rr}</option>`).join("")}</select></div>
+<div class="row"><label>Department</label><select id="eeDept">${DEPARTMENTS.map(d => `<option ${d === u.department ? "selected" : ""}>${d}</option>`).join("")}</select></div>
+<div class="row"><label>Monthly Salary (₹)</label><input id="eeSalary" type="number" value="${u.salary || 0}"/></div>
+<div class="row"><label>Status</label><select id="eeActive"><option value="true" ${u.active ? "selected" : ""}>Active</option><option value="false" ${!u.active ? "selected" : ""}>Suspended</option></select></div>
+<div class="row"><label>Reset password to default? (optional)</label><input type="checkbox" id="eeReset" style="width:auto"/> Set password back to ${DEFAULT_PASS}</div>
+<div class="modal-actions"><button class="btn grey" onclick="closeModal()">Cancel</button><button class="btn primary" onclick="saveEditEmployee('${u.uniqueId}')">Save Changes</button></div>`);
+}
+async function saveEditEmployee(id) {
+const u = users.find(x => x.uniqueId === id); if (!u || !canEditUser(u)) return;
+const name = document.getElementById("eeName").value.trim();
+if (!name) { alert("Name cannot be empty."); return; }
+u.name = name; u.role = document.getElementById("eeRole").value; u.department = document.getElementById("eeDept").value;
+u.salary = parseInt(document.getElementById("eeSalary").value, 10) || u.salary || 0;
+u.active = document.getElementById("eeActive").value === "true";
+userRights[id] = defaultRights(u.role);
+if (document.getElementById("eeReset").checked) { u.passHash = await hashPass(DEFAULT_PASS, u.uniqueId); u.mustChange = true; }
+addActivity(`✏️ ${currentUser.name} updated details of ${u.name} (${u.uniqueId}).`);
+initLoginOptions(); closeModal(); renderApp(); showToast(`${u.name}'s details updated.`);
+}
+function openChangePassModal(first) {
+openModal(`<h3>🔑 ${first ? "Change default password (required)" : "Change Password"}</h3>
+${first ? `<p class="muted">You are still using the default password. For hospital data safety, set your own password now.</p>` : ""}
+<div class="row"><input type="password" id="cpCurrent" placeholder="Current password"/></div>
+<div class="row"><input type="password" id="cpNew" placeholder="New password (min 8 chars, 1 letter + 1 number)"/></div>
+<div class="row"><input type="password" id="cpConfirm" placeholder="Confirm new password"/></div>
+<div class="modal-actions">${first ? `<button class="btn grey" onclick="closeModal()">Later</button>` : `<button class="btn grey" onclick="closeModal()">Cancel</button>`}
+<button class="btn primary" onclick="submitChangePass()">Save Password</button></div>`);
+}
+async function submitChangePass() {
+const cur = document.getElementById("cpCurrent").value;
+const nw = document.getElementById("cpNew").value;
+const cf = document.getElementById("cpConfirm").value;
+if ((await hashPass(cur, currentUser.uniqueId)) !== currentUser.passHash) { alert("Current password is incorrect."); return; }
+if (nw.length < 8 || !/[A-Za-z]/.test(nw) || !/[0-9]/.test(nw)) { alert("New password must be at least 8 characters with letters and numbers."); return; }
+if (nw !== cf) { alert("New passwords do not match."); return; }
+currentUser.passHash = await hashPass(nw, currentUser.uniqueId);
+currentUser.mustChange = false;
+addActivity(`${currentUser.name} changed their password.`);
+closeModal(); showToast("Password changed successfully.");
+}
+/* ---------- OTHER ACTIONS ---------- */
+function addRequest() {
+const name = prompt("Enter proposed employee name:"); if (!name) return;
+const role = prompt("Enter proposed role:", "Staff"); if (!role) return;
+const dept = prompt("Enter proposed department:", "Radiology"); if (!dept) return;
+requests.unshift({ id: Date.now(), requesterId: currentUser.uniqueId, proposedName: name, proposedRole: role, proposedDepartment: dept, status: "Pending" });
+addActivity(`${currentUser.name} requested to add ${name} as ${role}.`);
+renderApp(); showToast("Employee add request sent to Admin for approval.");
+}
+function approveRequest(id) { const r = requests.find(x => x.id === id); if (!r) return; r.status = "Approved"; addActivity(`${currentUser.name} approved employee request for ${r.proposedName}.`); renderApp(); showToast(`Request approved for ${r.proposedName}.`); }
+function rejectRequest(id) { const r = requests.find(x => x.id === id); if (!r) return; r.status = "Rejected"; addActivity(`${currentUser.name} rejected employee request for ${r.proposedName}.`); renderApp(); showToast(`Request rejected for ${r.proposedName}.`); }
+function suspendUser(id) {
+const u = users.find(x => x.uniqueId === id); if (!u) return;
+if (currentUser.role === "Admin" && u.role === "Director") { alert("Admin cannot suspend a Director."); return; }
+if (!confirm(`Suspend ${u.name} (${u.uniqueId})?`)) return;
+u.active = false; addActivity(`🛑 ${currentUser.name} suspended ${u.name}.`); renderApp(); showToast(`${u.name} has been suspended.`);
+}
+function deleteUser(id) {
+const u = users.find(x => x.uniqueId === id); if (!u) return;
+if (currentUser.role === "Admin" && u.role === "Director") { alert("Admin cannot delete a Director."); return; }
+if (!confirm(`Delete ${u.name} (${u.uniqueId}) from the system?`)) return;
+users = users.filter(x => x.uniqueId !== id);
+tasks = tasks.filter(t => t.assigneeId !== id && t.assignerId !== id);
+attendance = attendance.filter(a => a.uniqueId !== id);
+addActivity(`🗑️ ${currentUser.name} deleted ${u.name} from the system.`);
+initLoginOptions(); renderApp(); showToast(`${u.name} has been deleted.`);
+}
+function getMyAttendance() { return attendance.find(a => a.uniqueId === currentUser.uniqueId && a.date === TODAY_STR); }
+function checkIn() {
+const r = getMyAttendance();
+if (r && r.checkIn) { alert("You are already checked in."); return; }
+const time = formatTime(new Date());
+if (r) r.checkIn = time; else attendance.unshift({ uniqueId: currentUser.uniqueId, date: TODAY_STR, checkIn: time, checkOut: "", report: "" });
+addActivity(`${currentUser.name} checked in for duty.`);
+renderApp(); showToast("Checked in successfully.");
+}
+/* ---------- HELPERS ---------- */
+function overdueDays(t) { if (["Submitted", "Approved"].includes(t.status)) return 0; const due = new Date(t.due + "T00:00:00"); const diff = Math.floor((TODAY - due) / 86400000); return diff > 0 ? diff : 0; }
+function statusBadge(s) {
+if (s === "Pending") return `<span class="badge yellow">Pending</span>`;
+if (s === "In Progress") return `<span class="badge blue">In Progress</span>`;
+if (s === "Submitted" || s === "Approved") return `<span class="badge green">${s}</span>`;
+if (s === "Rejected") return `<span class="badge red">Rejected</span>`;
+return `<span class="badge blue">${s}</span>`;
+}
+function formatDate(d) { return new Date(d + "T00:00:00").toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }); }
+function formatDateInput(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+function formatFullDate(d) { return d.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" }); }
+function formatTime(d) { return d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }); }
+function addActivity(text) { activity.unshift({ time: formatTime(new Date()), stamp: new Date().toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }), text }); }
+function showToast(msg) { const t = document.getElementById("toast"); t.textContent = msg; t.classList.add("show"); setTimeout(() => t.classList.remove("show"), 3500); }
+</script>
+</body>
+</html>
